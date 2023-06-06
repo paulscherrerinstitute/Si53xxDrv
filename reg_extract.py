@@ -79,9 +79,10 @@ class Piece:
     return mergedAfter
 
 class Setting:
-  def __init__(self, name, **kwargs):
+  def __init__(self, name, access, **kwargs):
     super().__init__(**kwargs)
     self._name  = name
+    self._acc   = access
     self._pcs   = []
 
   @property
@@ -91,6 +92,10 @@ class Setting:
   @property
   def pieces(self):
     return self._pcs
+
+  @property
+  def access(self):
+    return self._acc
 
   def addPiece(self, o):
     if len(self._pcs) == 0:
@@ -143,7 +148,9 @@ class RegSet:
               right = int(g[2])
             else:
               right = left
-            acc  = flds[2]
+            if ( len(flds[2]) != 0 ):
+              acc  = flds[2]
+            # else (if flds[2] empty) use previous value (table value from above)
             if ( len(flds[3]) != 0 ):
               name = flds[3]
             # else (if flds[3] empty) use previous name (table value from above)
@@ -157,8 +164,10 @@ class RegSet:
               continue
             el = self._d.get(name)
             if el is None:
-              el = Setting(name)
+              el = Setting(name, acc)
               self._d[name] = el
+            if ( el.access != acc ):
+              raise RuntimeError("Setting '{}' with mismatching access (was {}, now {})".format(name, el.access, acc))
             el.addPiece(Piece(addr, left, right))
           else:
             print("SKIPPING {}".format( ",".join(flds) ))
