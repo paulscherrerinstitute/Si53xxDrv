@@ -1,0 +1,23 @@
+table 16.101 misnamed registers
+
+OOFx_TRG_THR_EXT should be OOFx_CLR_THR_EXT; manually fixed in CSV
+
+table 16.125: wrong register address for 15:8, should probably be 0x51D; manually fixed in CSV
+
+table 16.169: inconsistent numbering of bitfields. In any case, the manual
+              uses an ambiguous method to identify bit-fields. When a setting spans
+              multiple registers then the bit-range is relative to the setting, as in
+                 0x033B  7:0  N0_FSTEPW
+                 0x033C 15:8  N0_FSTEPW
+                 0x033D 23:16 N0_FSTEPW
+                 ...
+              However, when multiple settings map into a single register then the
+              bit range is relative to the register as in
+
+                 0x094f 3:0  REFCLK_HYS_SEL
+                 0x094f 7:4  IN_CMOS_USE1P8
+
+              Luckily there are not many of these; we fix 094f manually in CSV
+                 0x094f 11:0 REFCLK_HYS_SEL
+
+table 16.118: extra blanks in some setting names 'N0_ FSTEPW'; manually fixed in CSV

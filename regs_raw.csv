@@ -1,0 +1,820 @@
+Reg Address,Bit Field,Type,Name,Description
+0x0001,7:0,R/W,PAGE,Selects one of 256 possible pages.
+Reg Address,Bit Field,Type,Name,Value,Description
+0x0002,7:0,R,PN_BASE,0x95,"Four-digit “base” part number, one nibble per digit."
+0x0003,15:8,R,PN_BASE,0x53,Example: Si5395A-A-GM. The base part number
+"",,,,,"(OPN) is 5395, which is stored in this register."
+Reg Address,Bit Field,Type,Name,Description
+0x0004,7:0,R,GRADE,One ASCII character indicating the device speed/synthesis mode.
+"",,,,"0 = A, 1 = B, 2 = C, 3 = D , 4 =E"
+"",,,,"9=J, 10=K,11=L,12=M,15=P etc"
+Reg Address,Bit Field,Type,Name,Description
+0x0005,7:0,R,DEVICE_REV,One ASCII character indicating the device revision level.
+"",,,,"0 = A; 1 = B, etc."
+"",,,,"Example Si5395C-A12345-GM, the device revision is “A” and"
+"",,,,stored as 0.
+Reg Address,Bit Field,Type,Name,Description
+0x0009,7:0,R/W,TEMP_GRADE,Device temperature grading
+"",,,,0 = Industrial (–40° C to 85° C) ambient conditions
+Reg Address,Bit Field,Type,Name,Description
+0x000A,7:0,R/W,PKG_ID,"Package ID0 = 9x9 mm 64 QFN"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x000B,6:2,R/W,I2C_ADDR,"The upper five bits of the 7-bit I2C address.The lower two bits are controlled by the A1 and A0 pins.Note: This register is not bank burnable."
+Reg Address,Bit Field,Type,Name,Description
+0x000C,0,R,SYSINCAL,1 if the device is calibrating.
+0x000C,1,R,LOSXAXB,1 if there is no signal at the XAXB pins.
+0x000C,3,R,XAXB_ERR,"1 if there is a problem locking to the XAXB inputsignal."
+0x000C,5,R,SMBUS_TIMEOUT,1 if there is an SMBus timeout error.
+Reg Address,Bit Field,Type,Name,Description
+0x000D,3:0,R,LOS,1 if the clock input is currently LOS
+0x000D,7:4,R,OOF,1 if the clock input is currently OOF
+Reg Address,Bit Field,Type,Name,Description
+0x000E,1,R,LOL,1 if the DSPLL is out of lock
+0x000E,5,R,HOLD,1 if the DSPLL is in holdover (or free run)
+Reg Address,Bit Field,Type,Name,Description
+0x000F,5,R,CAL_PLL,1 if the DSPLL internal calibration is busy
+Reg Address,Bit Field,Type,Name,Description
+0x0011,0,R/W,SYSINCAL_FLG,"Sticky version of SYSINCAL. Write a 0 to this bitto clear."
+0x0011,1,R/W,LOSXAXB_FLG,"Sticky version of LOSXAXB. Write a 0 to this bitto clear."
+0x0011,3,R/W,XAXB_ERR_FLG,"Sticky version of XAXB_ERR.Write a 0 to thisbit to clear."
+0x0011,5,R/W,SMBUS_TIMEOUT_FLG,"Sticky version of SMBUS_TIMEOUT. Write a 0to this bit to clear."
+Reg Address,Bit Field,Type,Name,Description
+0x0012,3:0,R/W,LOS_FLG,1 if the clock input is LOS for the given input
+0x0012,7:4,R/W,OOF_FLG,1 if the clock input is OOF for the given input
+Reg Address,Bit Field,Type,Name,Description
+0x0013,1,R/W,LOL_FLG,1 if the DSPLL was unlocked
+0x0013,5,R/W,HOLD_FLG,1 if the DSPLL was in holdover or free run
+Reg Address,Bit Field,Type,Name,Description
+0x0014,5,R/W,CAL_FLG_PLL,1 if the internal calibration was busy
+Reg Address,Bit Field,Type,Name,,Description
+0x0016,1,R/W,LOL_ON_HOLD,Set by CBPro.,
+Reg Address,Bit Field,Type,Name,Description
+0x0017,0,R/W,SYSINCAL_INTR_MSK,1 to mask SYSINCAL_FLG from causing an in-
+"",,,,terrupt
+0x0017,1,R/W,LOSXAXB_INTR_MSK,1 to mask the LOSXAXB_FLG from causing an
+"",,,,interrupt
+0x0017,5,R/W,SMBUS_TIMEOUT_INTR_MSK,1 to mask SMBUS_TIMEOUT_FLG from the in-
+"",,,,terrupt
+0x0017,6,R/W,RESERVED,Factory set to 1 to mask reserved bit from caus-
+"",,,,ing an interrupt. Do not clear this bit.
+0x0017,7,R/W,RESERVED,Factory set to 1 to mask reserved bit from caus-
+"",,,,ing an interrupt. Do not clear this bit.
+Reg Address,Bit Field,Type,Name,Description
+0x0018,3:0,R/W,LOS_INTR_MSK,1 to mask the clock input LOS flag
+0x0018,7:4,R/W,OOF_INTR_MSK,1 to mask the clock input OOF flag
+Reg Address,Bit Field,Type,Name,Description
+0x0019,1,R/W,LOL_INTR_MSK,1 to mask the clock input LOL flag
+Reg Address,Bit Field,Type,Name,Description
+0x0019,5,R/W,HOLD_INTR_MSK,1 to mask the holdover flag
+Reg Address,Bit Field,Type,Name,Description
+0x001A,5,R/W,CAL_INTR_MSK,1 to mask the DSPLL internal calibration busy flag
+Reg Address,Bit Field,Type,Name,Description
+0x001C,0,S,SOFT_RST_ALL,"1 Initialize and calibrates the entire device0 No effect"
+0x001C,2,S,SOFT_RST,"1 Initialize outer loop0 No effect"
+Reg Address,Bit Field,Type,Name,Description
+0x001D,0,S,FINC,"1 a rising edge will cause the selected MultiSynth toincrement the output frequency by the Nx_FSTEPW pa-rameter. See registers 0x0339–0x0358"
+0x001D,1,S,FDEC,"1 a rising edge will cause the selected MultiSynth todecrement the output frequency by the Nx_FSTEPWparameter. See registers 0x0339–0x0358"
+Reg Address,Bit Field,Type,Name,Description
+0x001E,0,R/W,PDN,1 to put the device into low-power mode
+Reg Address,Bit Field,Type,Name,Description
+0x001E,1,R/W,HARD_RST,"1 causes hard reset. The same as power up except thatthe serial port access is not held at reset.0 No reset"
+0x001E,2,S,SYNC,1 to reset all output R dividers to the same state.
+Reg Address,Bit Field,Type,Name,Description
+0x002B,3,R/W,SPI_3WIRE,"0 for 4-wire SPI, 1 for 3-wire SPI"
+0x002B,5,R/W,AUTO_NDIV_UPDATE,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x002C,3:0,R/W,LOS_EN,"1 to enable LOS for a clock input;0 for disable"
+0x002C,4,R/W,LOSXAXB_DIS,"Enable LOS detection on the XAXB inputs.0: Enable LOS Detection (default)1: Disable LOS Detection"
+Reg Address,Bit Field,Type,Name,Description
+0x002D,1:0,R/W,LOS0_VAL_TIME,"Clock Input 00 for 2 msec1 for 100 msec2 for 200 msec3 for one second"
+0x002D,3:2,R/W,LOS1_VAL_TIME,"Clock Input 1, same as above"
+0x002D,5:4,R/W,LOS2_VAL_TIME,"Clock Input 2, same as above"
+0x002D,7:6,R/W,LOS3_VAL_TIME,"Clock Input 3, same as above"
+Reg Address,Bit Field,Type,Name,Description
+0x002E,7:0,R/W,LOS0_TRG_THR,16-bit Threshold Value
+0x002F,15:8,R/W,LOS0_TRG_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x0030,7:0,R/W,LOS1_TRG_THR,16-bit Threshold Value
+0x0031,15:8,R/W,LOS1_TRG_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x0032,7:0,R/W,LOS2_TRG_THR,16-bit Threshold Value
+0x0033,15:8,R/W,LOS2_TRG_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x0034,7:0,R/W,LOS3_TRG_THR,16-bit Threshold Value
+0x0035,15:8,R/W,LOS3_TRG_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x0036,7:0,R/W,LOS0_CLR_THR,16-bit Threshold Value
+0x0037,15:8,R/W,LOS0_CLR_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x0038,7:0,R/W,LOS1_CLR_THR,16-bit Threshold Value
+0x0039,15:8,R/W,LOS1_CLR_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x003A,7:0,R/W,LOS2_CLR_THR,16-bit Threshold Value
+0x003B,15:8,R/W,LOS2_CLR_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x003C,7:0,R/W,LOS3_CLR_THR,16-bit Threshold Value
+0x003D,15:8,R/W,LOS3_CLR_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x003E,7:4,R/W,LOS_MIN_PERIOD_EN,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x003F,3:0,R/W,OOF_EN,"1 to enable, 0 to disable"
+0x003F,7:4,R/W,FAST_OOF_EN,"1 to enable, 0 to disable"
+Reg Address,Bit Field,Type,Name,Description
+0x0040,2:0,R/W,OOF_REF_SEL,"0 for CLKIN01 for CLKIN12 for CLKIN23 for CLKIN34 for XAXB"
+Reg Address,Bit Field,Type,Name,Description
+0x0041,4:0,R/W,OOF0_DIV_SEL,Sets a divider for the OOF circuitry for each input clock
+"",,,,"0,1,2,3. The divider value is 2OOFx_DIV_SEL. CBPro sets"
+0x0042,4:0,R/W,OOF1_DIV_SEL,these dividers.
+0x0043,4:0,R/W,OOF2_DIV_SEL,
+0x0044,4:0,R/W,OOF3_DIV_SEL,
+0x0045,4:0,R/W,OOFXO_DIV_SEL,
+Reg Address,Bit Field,Type,Name,Description
+0x0046,7:0,R/W,OOF0_SET_THR,OOF Set threshold. Range is up to ±500 ppm in steps of
+"",,,,1/16 ppm.
+0x0047,7:0,R/W,OOF1_SET_THR,OOF Set threshold. Range is up to ±500 ppm in steps of
+"",,,,1/16 ppm.
+0x0048,7:0,R/W,OOF2_SET_THR,OOF Set threshold. Range is up to ±500 ppm in steps of
+"",,,,1/16 ppm.
+0x0049,7:0,R/W,OOF3_SET_THR,OOF Set threshold. Range is up to ±500 ppm in steps of
+"",,,,1/16 ppm.
+Reg Address,Bit Field,Type,Name,Description
+0x004A,7:0,R/W,OOF0_CLR_THR,OOF Clear threshold. Range is up to ±500 ppm in steps
+"",,,,of 1/16 ppm.
+0x004B,7:0,R/W,OOF1_CLR_THR,OOF Clear threshold. Range is up to ±500 ppm in steps
+"",,,,of 1/16 ppm.
+0x004C,7:0,R/W,OOF2_CLR_THR,OOF Clear threshold. Range is up to ±500 ppm in steps
+"",,,,of 1/16 ppm.
+0x004D,7:0,R/W,OOF3_CLR_THR,OOF Clear threshold. Range is up to ±500 ppm in steps
+"",,,,of 1/16 ppm.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x004E,2:0,R/W,OOF0_DETWIN_SEL,Values calculated by CBPro
+0x004E,6:4,R/W,OOF1_DETWIN_SEL,
+0x004F,2:0,R/W,OOF2_DETWIN_SEL,
+0x004F,6:4,R/W,OOF3_DETWIN_SEL,
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x0050,3:0,R/W,OOF_ON_LOS,Values set by CBPro,
+Reg Address,Bit Field,Type,Name,Description
+0x0051,3:0,R/W,FAST_OOF0_SET_THR,(1+ value) x 1000 ppm
+0x0052,3:0,R/W,FAST_OOF1_SET_THR,(1+ value) x 1000 ppm
+0x0053,3:0,R/W,FAST_OOF2_SET_THR,(1+ value) x 1000 ppm
+0x0054,3:0,R/W,FAST_OOF3_SET_THR,(1+ value) x 1000 ppm
+Reg Address,Bit Field,Type,Name,Description
+0x0055,3:0,R/W,FAST_OOF0_CLR_THR,(1+ value) x 1000 ppm
+0x0056,3:0,R/W,FAST_OOF1_CLR_THR,(1+ value) x 1000 ppm
+0x0057,3:0,R/W,FAST_OOF2_CLR_THR,(1+ value) x 1000 ppm
+0x0058,3:0,R/W,FAST_OOF3_CLR_THR,(1+ value) x 1000 ppm
+Reg Address,Bit Field,Type,Name,Description
+0x0059,1:0,R/W,FAST_OOF0_DETWIN_SEL,Values calculated by CBPro
+0x0059,3:2,R/W,FAST_OOF1_DETWIN_SEL,
+0x0059,5:4,R/W,FAST_OOF2_DETWIN_SEL,
+0x0059,7:6,R/W,FAST_OOF3_DETWIN_SEL,
+Reg Address,Bit Field,Type,Name,Description
+0x005A,7:0,R/W,OOF0_RATIO_REF,Values calculated by CBPro
+0x005B,15:8,R/W,OOF0_RATIO_REF,
+0x005C,23:16,R/W,OOF0_RATIO_REF,
+0x005D,25:24,R/W,OOF0_RATIO_REF,
+Reg Address,Bit Field,Type,Name,Description
+0x005E,7:0,R/W,OOF1_RATIO_REF,Values calculated by CBPro
+0x005F,15:8,R/W,OOF1_RATIO_REF,
+0x0060,23:16,R/W,OOF1_RATIO_REF,
+0x0061,25:24,R/W,OOF1_RATIO_REF,
+Reg Address,Bit Field,Type,Name,Description
+0x0062,7:0,R/W,OOF2_RATIO_REF,Values calculated by CBPro
+0x0063,15:8,R/W,OOF2_RATIO_REF,
+0x0064,23:16,R/W,OOF2_RATIO_REF,
+0x0065,25:24,R/W,OOF2_RATIO_REF,
+Reg Address,Bit Field,Type,Name,Description
+0x0066,7:0,R/W,OOF3_RATIO_REF,Values calculated by CBPro
+0x0067,15:8,R/W,OOF3_RATIO_REF,
+0x0068,23:16,R/W,OOF3_RATIO_REF,
+0x0069,25:24,R/W,OOF3_RATIO_REF,
+Reg Address,Bit Field,Type,Name,Description
+0x0092,1,R/W,LOL_FST_EN,Enables fast detection of LOL. A large input frequency
+"",,,,error will quickly assert LOL when this is enabled.
+Reg Address,Bit Field,Type,Name,Description
+0x0093,7:4,R/W,LOL_FST_DETWIN_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0095,3:2,R/W,LOL_FST_VALWIN_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0096,7:4,R/W,LOL_FST_SET_THR_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0098,7:4,R/W,LOL_FST_CLR_THR_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x009A,1,R/W,LOL_SLOW_EN_PLL,1 to enable LOL; 0 to disable LOL.
+Reg Address,Bit Field,Type,Name,Description
+0x009B,7:4,R/W,LOL_SLW_DETWIN_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Setting Name,Description
+0x009D,3:2,R/W,LOL_SLW_VALWIN_SEL,Values calculated by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x009E,7:4,R/W,"LOL_SLW_SET_THR","Configures the loss of lock set thresholds. Selectableas 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000.Values are in ppm."
+Reg Address,Bit Field,Type,Name,Description
+0x00A0,7:4,R/W,"LOL_SLW_CLR_THR","Configures the loss of lock set thresholds. Selectableas 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000.Values are in ppm."
+Reg Address,Bit Field,Type,Name,Description
+0x00A2,1,R/W,LOL_TIMER_EN,"0 to disable1 to enable"
+Reg Address,Bit Field,Type,Name,Description
+0x00A9,7:0,R/W,"LOL_CLR_DE-LAY_DIV256",Set by CBPro.
+0x00AA,15:8,R/W,"LOL_CLR_DE-LAY_DIV256",Set by CBPro.
+0x00AB,23:16,R/W,"LOL_CLR_DE-LAY_DIV256",Set by CBPro.
+0x00AC,28:24,R/W,"LOL_CLR_DE-LAY_DIV256",Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x00E2,7:0,R,ACTIVE_NVM_BANK,0x03 when no NVM burn by customer
+"",,,,0x0F when 1 NVM bank has been burned by
+"",,,,customer
+"",,,,0x3F when 2 NVM banks have been burned by
+"",,,,customer
+"",,,,"When ACTIVE_NVM_BANK=0x3F, the last"
+"",,,,bank has already been burned.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x00E3,7:0,R/W,NVM_WRITE,Write 0xC7 to initiate an NVM bank burn.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x00E4,0,S,NVM_READ_BANK,"When set, this bit will read the NVM down into"
+"",,,,the volatile memory.
+Reg Address,Bit Field,Type,Name,Description
+0x00E5,5,R/W,FASTLOCK_EXTEND_EN,Extend Fastlock bandwidth period past LOL
+"",,,,Clear
+"",,,,0: Do not extend Fastlock period
+"",,,,1: Extend Fastlock period (default)
+Reg Address,Bit Field,Type,Name,Description
+0x00EA,7:0,R/W,FASTLOCK_EXTEND,29-bit value. Set by CBPro to minimize the phase transi-
+"",,,,ents when switching the PLL bandwidth.
+0x00EB,15:8,R/W,FASTLOCK_EXTEND,
+"",,,,See FASTLOCK_EXTEND_SCL.
+0x00EC,23:16,R/W,FASTLOCK_EXTEND,
+0x00ED,28:24,R/W,FASTLOCK_EXTEND,
+Reg Address,Bit Field,Type,Name,,Description
+0x00F6,0,R,REG_0XF7_INTR,Set by CBPro.,
+0x00F6,1,R,REG_0XF8_INTR,Set by CBPro.,
+0x00F6,2,R,REG_0XF9_INTR,Set by CBPro.,
+Reg Address,Bit Field,Type,Name,Description
+0x00F7,0,R,SYSINCAL_INTR,Set by CBPro.
+0x00F7,1,R,LOSXAXB_INTR,Set by CBPro.
+0x00F7,2,R,LOSREF_INTR,Set by CBPro.
+0x00F7,4,R,LOSVCO_INTR,Set by CBPro.
+0x00F7,5,R,"SMBUS_TIME_OUT_INTR",Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x00F8,3:0,R,LOS_INTR,Set by CBPro.
+0x00F8,7:4,R,OOF_INTR,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x00F9,1,R,LOL_INTR,Set by CBPro.
+0x00F9,5,R,HOLD_INTR,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x00FE,7:0,R,DEVICE_READY,"Ready Only byte to indicate device is ready. When readdata is 0x0F one can safely read/write registers. Thisregister is repeated on every page therefore a pagewrite is not ever required to read the DEVICE_READYstatus."
+Reg Address,Bit Field,Type,Name,Description
+0x0102,0,R/W,OUTALL_DISABLE_LOW,"1 Pass through the output enables, 0 disablesall output drivers"
+Reg Address,Bit Field,Type,Name,Description
+0x0103,0,R/W,OUT0A_PDN,"Powerdown output driver.0: Normal Operation (default)1: Powerdown output driverWhen powered down, outputs pinswill be high impedance with a lightpull down effect."
+0x0103,1,R/W,OUT0A_OE,"Enable/Disable individual output.0: Disable output (default)1: Enable output"
+0x0103,2,R/W,OUT0A_RDIV_FORCE2,"Force R0A output divider divide-by-2.0: R0A_REG sets divide value (de-fault)1: Divide value forced to divide-by-2"
+Reg Address,Bit Field,Type,Name,Description
+0x0104,2:0,R/W,OUT0A_FORMAT,"Select output format.0: Reserved1: Differential Normalmode2: Differential Low-Powermode3: Reserved4: LVCMOS single ended5–7: Reserved"
+Reg Address,Bit Field,Type,Name,Description
+0x0104,3,R/W,OUT0A_SYNC_EN,"Synchronous Enable/Dis-able selection.0: Asynchronous Ena-ble/Disable (default)1: Synchronous Ena-ble/Disable (Glitchless)"
+0x0104,5:4,R/W,OUT0A_DIS_STATE,"Determines the logicstate of the output driverwhen disabled:0: Disable logic Low1: Disable logic High2-3: Reserved"
+0x0104,7:6,R/W,OUT0A_CMOS_DRV,"LVCMOS output impe-dance selection. See6.3.5 LVCMOS OutputImpedance and DriveStrength Selectionfor val-id selections."
+Reg Address,Bit Field,Type,Name,Description
+0x0105,3:0,R/W,OUT0A_CM,"OUT0A Common ModeVoltage selection. On-ly applies whenOUT0A_FORMAT=1 or2."
+0x0105,6:4,R/W,OUT0A_AMPL,"OUT0A Differential Am-plitude setting. Only ap-plies when OUT0A_FOR-MAT=1 or 2."
+Reg Address,Bit Field,Type,Name,Description
+0x0106,2:0,R/W,OUT0A_MUX_SEL,"OUT0A output source divider select.0: N0 is the source for OUT0A1: N1 is the source for OUT0A2: N2 is the source for OUT0A3: N3 is the source for OUT0A4: N4 is the source for OUT0A5-7: Reserved"
+0x0106,3,R/W,OUT0A_VDD_SEL_EN,"Output Driver VDD Select Enable. Set to 1for normal operation."
+Reg Address,Bit Field,Type,Name,Description
+0x0106,5:4,R/W,OUT0A_VDD_SEL,"Output Driver VDD Select0: 3.3 V1: 1.8 V2: 2.5 V3: Reserved"
+0x0106,7:6,R/W,OUT0A_INV,"OUT0A output LVCMOS inversion. Onlyapplies when OUT0A_FORMAT= 4. See6.3.7 LVCMOS Output Polarity for moreinformation."
+Register Address,Description,(Same as) Address
+0x0108,"OUT0 Powerdown, Output Enable,and R0 Divide-by-2",0x0103
+0x0109,"OUT0 Signal Format and Configura-tion",0x0104
+0x010A,"OUT0 Differential Amplitude andCommon Mode",0x0105
+0x010B,"OUT0 Source Selection andLVCMOS Inversion",0x0106
+0x010D,"OUT1 Powerdown, Output Enable,and R1 Divide-by-2",0x0103
+0x010E,"OUT1 Signal Format and Configura-tion",0x0104
+0x010F,"OUT1 Differential Amplitude andCommon Mode",0x0105
+0x0110,"OUT1 Source Selection andLVCMOS Inversion",0x0106
+0x0112,"OUT2 Powerdown, Output Enable,and R2 Divide-by-2",0x0103
+0x0113,"OUT2 Signal Format and Configura-tion",0x0104
+0x0114,"OUT2 Differential Amplitude andCommon Mode",0x0105
+0x0115,"OUT2 Source Selection andLVCMOS Inversion",0x0106
+0x0117,"OUT3 Powerdown, Output Enable,and R3 Divide-by-2",0x0103
+0x0118,"OUT3 Signal Format and Configura-tion",0x0104
+Register Address,Description,(Same as) Address
+0x0119,"OUT3 Differential Amplitude andCommon Mode",0x0105
+0x011A,"OUT3 Source Selection andLVCMOS Inversion",0x0106
+0x011C,"OUT4 Powerdown, Output Enable,and R4 Divide-by-2",0x0103
+0x011D,"OUT4 Signal Format and Configura-tion",0x0104
+0x011E,"OUT4 Differential Amplitude andCommon Mode",0x0105
+0x011F,"OUT4 Source Selection andLVCMOS Inversion",0x0106
+0x0121,"OUT5 Powerdown, Output Enable,and R5 Divide-by-2",0x0103
+0x0122,"OUT5 Signal Format and Configura-tion",0x0104
+0x0123,"OUT5 Differential Amplitude andCommon Mode",0x0105
+0x0124,"OUT5 Source Selection andLVCMOS Inversion",0x0106
+0x0126,"OUT6 Powerdown, Output Enable,and R6 Divide-by-2",0x0103
+0x0127,"OUT6 Signal Format and Configura-tion",0x0104
+0x0128,"OUT6 Differential Amplitude andCommon Mode",0x0105
+0x0129,"OUT6 Source Selection andLVCMOS Inversion",0x0106
+0x012B,"OUT7 Powerdown, Output Enable,and R7 Divide-by-2",0x0103
+0x012C,"OUT7 Signal Format and Configura-tion",0x0104
+0x012D,"OUT7 Differential Amplitude andCommon Mode",0x0105
+0x012E,"OUT7 Source Selection andLVCMOS Inversion",0x0106
+0x0130,"OUT8 Powerdown, Output Enable,and R8 Divide-by-2",0x0103
+0x0131,"OUT8 Signal Format and Configura-tion",0x0104
+0x0132,"OUT8 Differential Amplitude andCommon Mode",0x0105
+0x0133,"OUT8 Source Selection andLVCMOS Inversion",0x0106
+0x0135,"OUT9 Powerdown, Output Enable,and R9 Divide-by-2",0x0103
+Register Address,Description,(Same as) Address
+0x0136,"OUT9 Signal Format and Configura-tion",0x0104
+0x0137,"OUT9 Differential Amplitude andCommon Mode",0x0105
+0x0138,"OUT9 Source Selection andLVCMOS Inversion",0x0106
+0x013A,"OUT9A Powerdown, Output Enable,and R9A Divide-by-2",0x0103
+0x013B,"OUT9A Signal Format and Configu-ration",0x0104
+0x013C,"OUT9A Differential Amplitude andCommon Mode",0x0105
+0x013D,"OUT9A Source Selection andLVCMOS Inversion",0x0106
+Reg Address,Bit Field,Type,Setting Name,Description
+0x013F,7:0,R/W,OUTX_ALWAYS_ON,"This setting is managed by CBProduring zero delay mode."
+0x0140,11:8,R/W,OUTX_ALWAYS_ON,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0141,1,R/W,OUT_DIS_MSK,Set by CBPro.
+0x0141,5,R/W,OUT_DIS_LOL_MSK,Set by CBPro.
+0x0141,6,R/W,OUT_DIS_LOSXAXB_MSK,"Determines if outputs are disabledduring an LOSXAXB condition.0: All outputs disabled on LOSXAXB1: All outputs remain enabled duringLOSXAXB condition"
+0x0141,7,R/W,OUT_DIS_MSK_LOS_PFD,Set by CBPro.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0142,1,R/W,OUT_DIS_MSK_LOL,"0: LOL will disable all connected out-puts1: LOL does not disable any outputs"
+0x0142,5,R/W,OUT_DIS_MSK_HOLD,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0145,0,R/W,OUT_PDN_ALL,"0- no effect1- all drivers powered down"
+Reg Address,Bit Field,Type,Name,Description
+0x0206,1:0,R/W,PXAXB,Sets the prescale divider for the input clock
+"",,,,on XAXB.
+Reg Address,Bit Field,Type,Name,Description
+0x0208,7:0,R/W,P0_NUM,48-bit Integer Number
+0x0209,15:8,R/W,P0_NUM,
+0x020A,23:16,R/W,P0_NUM,
+0x020B,31:24,R/W,P0_NUM,
+0x020C,39:32,R/W,P0_NUM,
+0x020D,47:40,R/W,P0_NUM,
+Reg Address,Bit Field,Type,Name,Description
+0x020E,7:0,R/W,P0_DEN,32-bit Integer Number
+0x020F,15:8,R/W,P0_DEN,
+0x0210,23:16,R/W,P0_DEN,
+0x0211,31:24,R/W,P0_DEN,
+Register Address,Description,Size,Same as Address
+0x0212-0x0217,P1 Divider Numerator,48-bit Integer Number,0x0208-0x020D
+0x0218-0x021B,P1 Divider Denominator,32-bit Integer Number,0x020E-0x0211
+0x021C-0x0221,P2 Divider Numerator,48-bit Integer Number,0x0208-0x020D
+0x0222-0x0225,P2 Divider Denominator,32-bit Integer Number,0x020E-0x0211
+0x0226-0x022B,P3 Divider Numerator,48-bit Integer Number,0x0208-0x020D
+Register Address,Description,Size,Same as Address
+0x022C-0x022F,P3 Divider Denominator,32-bit Integer Number,0x020E-0x0211
+Reg Address,Bit Field,Type,Name,Description
+0x0230,0,S,P0_UPDATE,"0 - No update for P-divider value1 - Update P-divider value"
+0x0230,1,S,P1_UPDATE,
+0x0230,2,S,P2_UPDATE,
+0x0230,3,S,P3_UPDATE,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0231,3:0,R/W,P0_FRACN_MODE,"P0 (IN0) input divider fractional mode. Mustbe set to 0xB for proper operation."
+0x0231,4,R/W,P0_FRAC_EN,"P0 (IN0) input divider fractional enable0: Integer-only division.1: Fractional (or Integer) division."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0232,3:0,R/W,P1_FRACN_MODE,"P1 (IN1) input divider fractional mode. Mustbe set to 0xB for proper operation."
+0x0232,4,R/W,P1_FRAC_EN,"P1 (IN1) input divider fractional enable0: Integer-only division.1: Fractional (or Integer) division."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0233,3:0,R/W,P2_FRACN_MODE,"P2 (IN2) input divider fractional mode. Mustbe set to 0xB for proper operation."
+0x0233,4,R/W,P2_FRAC_EN,"P2 (IN2) input divider fractional enable0: Integer-only division.1: Fractional (or Integer) division."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0234,3:0,R/W,P3_FRACN_MODE,P3 (IN3) input divider fractional mode.
+"",,,,Must be set to 0xB for proper operation.
+0x0234,4,R/W,P3_FRAC_EN,P3 (IN3) input divider fractional enable
+"",,,,0: Integer-only division.
+"",,,,1: Fractional (or Integer) division.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0235,7:0,R/W,MXAXB_NUM,44-bit Integer Number
+0x0236,15:8,R/W,MXAXB_NUM,
+0x0237,23:16,R/W,MXAXB_NUM,
+0x0238,31:24,R/W,MXAXB_NUM,
+0x0239,39:32,R/W,MXAXB_NUM,
+0x023A,43:40,R/W,MXAXB_NUM,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x023B,7:0,R/W,MXAXB_DEN,32-bit Integer Number
+0x023C,15:8,R/W,MXAXB_DEN,
+0x023D,23:16,R/W,MXAXB_DEN,
+0x023E,31:24,R/W,MXAXB_DEN,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x023F,0,S,MXAXB_UPDATE,Set to 1 to update the MXAXB_NUM and
+"",,,,MXAXB_DEN values. A SOFT_RST may also be
+"",,,,used to update these values.
+Reg Address,Bit Field,Type,Name,Description
+0x0247,7:0,R/W,R0A_REG,24-bit integer final R0A divider se-
+"",,,,lection.
+0x0248,15:8,,,
+"",,,,R Divisor = (R0A_REG+1) x 2
+0x0249,23:16,,,
+"",,,,"However, note that setting"
+"",,,,R0A_REG = 0 will not set the out-
+"",,,,put to divide-by-2. See notes be-
+"",,,,low.
+Register Address,Description,Size,Same as Address
+0x024A-0x024C,R0_REG,24-bit Integer Number,0x0247-0x0249
+0x024D-0x024F,R1_REG,24-bit Integer Number,0x0247-0x0249
+0x0250-0x0252,R2_REG,24-bit Integer Number,0x0247-0x0249
+0x0253-0x0255,R3_REG,24-bit Integer Number,0x0247-0x0249
+0x0256-0x0258,R4_REG,24-bit Integer Number,0x0247-0x0249
+0x0259-0x025B,R5_REG,24-bit Integer Number,0x0247-0x0249
+0x025C-0x025E,R6_REG,24-bit Integer Number,0x0247-0x0249
+0x025F-0x0261,R7_REG,24-bit Integer Number,0x0247-0x0249
+0x0262-0x0264,R8_REG,24-bit Integer Number,0x0247-0x0249
+0x0265-0x0267,R9_REG,24-bit Integer Number,0x0247-0x0249
+0x0268-0x026A,R9A_REG,24-bit Integer Number,0x0247-0x0249
+Reg Address,Bit Field,Type,Name,Description
+0x026B,7:0,R/W,DESIGN_ID0,"ASCII encoded string defined by CBPro user, withuser defined space or null padding of unusedcharacters. A user will normally include a configu-ration ID + revision ID. For example, “ULT.1A” withnull character padding sets:DESIGN_ID0: 0x55DESIGN_ID1: 0x4CDESIGN_ID2: 0x54DESIGN_ID3: 0x2EDESIGN_ID4: 0x31DESIGN_ID5: 0x41DESIGN_ID6:0x 00DESIGN_ID7: 0x00"
+0x026C,15:8,R/W,DESIGN_ID1,
+0x026D,23:16,R/W,DESIGN_ID2,
+0x026E,31:24,R/W,DESIGN_ID3,
+0x026F,39:32,R/W,DESIGN_ID4,
+0x0270,47:40,R/W,DESIGN_ID5,
+0x0271,55:48,R/W,DESIGN_ID6,
+0x0272,63:56,R/W,DESIGN_ID7,
+Reg Address,Bit Field,Type,Name,Description
+0x0278,7:0,R/W,OPN_ID0,"OPN unique identifier. ASCII encoded. For exam-ple, with OPN:5395C-A12345-GM, 12345 is the OPN uniqueidentifier, which sets:OPN_ID0: 0x31OPN_ID1: 0x32OPN_ID2: 0x33OPN_ID3: 0x34OPN_ID4: 0x35"
+0x0279,15:8,R/W,OPN_ID1,
+0x027A,23:16,R/W,OPN_ID2,
+0x027B,31:24,R/W,OPN_ID3,
+0x027C,39:32,R/W,OPN_ID4,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x027D,7:0,R/W,OPN_REVISION,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x027E,7:0,R/W,BASELINE_ID,
+Reg Address,Bit Field,Type,Name,Description
+0x028A,4:0,R/W,"OOF0_TRG_THR_EXT",Set by CBPro.
+0x028B,4:0,R/W,"OOF1_TRG_THR_EXT",Set by CBPro.
+0x028C,4:0,R/W,"OOF2_TRG_THR_EXT",Set by CBPro.
+0x028D,4:0,R/W,"OOF3_TRG_THR_EXT",Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x028E,4:0,R/W,"OOF0_CLR_THR_EXT",Set by CBPro.
+0x028F,4:0,R/W,"OOF1_CLR_THR_EXT",Set by CBPro.
+0x0290,4:0,R/W,"OOF2_CLR_THR_EXT",Set by CBPro.
+0x0291,4:0,R/W,"OOF3_CLR_THR_EXT",Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0292,3:0,R/W,OOF_STOP_ON_LOS,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0293,3:0,R/W,OOF_CLEAR_ON_LOS,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0294,7:4,R/W,FASTLOCK_EXTEND_SCL,"Scales LOLB_INT_TIM-ER_DIV256. Set by CBPro"
+Reg Address,Bit Field,Type,Name,Description
+0x0296,1,R/W,LOL_SLW_VALWIN_SELX,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0297,1,R/W,FASTLOCK_DLY_ONSW_EN,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0299,1,R/W,FASTLOCK_DLY_ONLOL_EN,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x029D,7:0,R/W,FASTLOCK_DLY_ONLOL,Set by CBPro.
+0x029E,15:8,R/W,FASTLOCK_DLY_ONLOL,Set by CBPro.
+0x029F,19:16,R/W,FASTLOCK_DLY_ONLOL,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x02A9,7:0,R/W,FASTLOCK_DLY_ONSW,20-bit value. Set by CBPro.
+0x02AA,15:8,R/W,FASTLOCK_DLY_ONSW,
+0x02AB,19:16,R/W,FASTLOCK_DLY_ONSW,
+Reg Address,Bit Field,Type,Name,Description
+0x02B7,3:2,R/W,LOL_NOSIG_TIME,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x02B8,1,R/W,LOL_LOS_REFCLK,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x02BC,7:6,R/W,LOS_CMOS_MIN_PER_EN,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0302,7:0,R/W,N0_NUM,44-bit Integer Number
+0x0303,15:8,R/W,N0_NUM,
+0x0304,23:16,R/W,N0_NUM,
+0x0305,31:24,R/W,N0_NUM,
+0x0306,39:32,R/W,N0_NUM,
+0x0307,43:40,R/W,N0_NUM,
+Reg Address,Bit Field,Type,Name,Description
+0x0308,7:0,R/W,N0_DEN,32-bit Integer Number
+0x0309,15:8,R/W,N0_DEN,
+0x030A,23:16,R/W,N0_DEN,
+0x030B,31:24,R/W,N0_DEN,
+0x030C,0,S,N0_UPDATE,Set this bit to update the N0 divider.
+Register Address,Description,Size,Same as Address
+0x030D-0x0312,N1 Numerator,44-bit Integer Number,0x0302-0x0307
+0x0313-0x0316,N1 Denominator,32-bit Integer Number,0x0308-0x030B
+0x0317,N1_UPDATE,one bit,0x030C
+0x0318-0x031D,N2 Numerator,44-bit Integer Number,0x0302-0x0307
+0x031E-0x0321,N2 Denominator,32-bit Integer Number,0x0308-0x030B
+0x0322,N2_UPDATE,one bit,0x030C
+0x0323-0x0328,N3 Numerator,44-bit Integer Number,0x0302-0x0307
+0x0329-0x032C,N3 Denominator,32-bit Integer Number,0x0308-0x030B
+0x032D,N3_UPDATE,one bit,0x030C
+0x032E-0x0333,N4 Numerator,44-bit Integer Number,0x0302-0x0307
+0x0334-0x0337,N4 Denominator,32-bit Integer Number,0x0308-0x030B
+Reg Address,Bit Field,Type,Name,Description
+0x0338,1,S,N_UPDATE_ALL,Set this bit to update all five N dividers.
+0x0338,0,S,N4_UPDATE,Set this bit to update N4 divider.
+Reg Address,Bit Field,Type,Name,Description
+0x0339,4:0,R/W,N_FSTEP_MSK,"0 to enable FINC/FDEC updates1 to disable FINC/FDEC updates"
+Reg Address,Bit Field,Type,Name,Description
+0x033B,7:0,R/W,N0_FSTEPW,44-bit Integer Number
+0x033C,15:8,R/W,N0_FSTEPW,
+0x033D,23:16,R/W,N0_FSTEPW,
+0x033E,31:24,R/W,N0_FSTEPW,
+0x033F,39:32,R/W,N0_FSTEPW,
+0x0340,43:40,R/W,N0_FSTEPW,
+Register Address,Description,Size,Same as Address
+0x0341-0x0346,N1 Frequency Step Word,44-bit Integer Number,0x033B-0x0340
+0x0347-0x034C,N2 Frequency Step Word,44-bit Integer Number,0x033B-0x0340
+0x034D-0x0352,N3 Frequency Step Word,44-bit Integer Number,0x033B-0x0340
+0x0353-0x0358,N4 Frequency Step Word,44-bit Integer Number,0x033B-0x0340
+Reg Address,Bit Field,Type,Name,Description
+0x0487,0,R/W,ZDM_EN,0 to disable ZD mode
+"",,,,1 to enable ZD mode
+0x0487,2:1,R/W,ZDM_IN_SEL,Clock input select when in ZD mode.
+"",,,,"0 for IN0, 1 for IN1,2 for IN2,"
+"",,,,3 Reserved
+"",,,,Note: In ZD mode the feedback clock
+"",,,,comes into IN3
+0x0487,4,R/W,ZDM_AUTOSW_EN,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0507,7:6,R,IN_ACTV,"Currently selected DSPLL input clock.0: IN01: IN12: IN23: IN3"
+Reg Address,Bit Field,Type,Name,Description
+0x0508,5:0,R/W,BW0_PLL,PLL bandwidth parameter
+0x0509,5:0,R/W,BW1_PLL,PLL bandwidth parameter
+0x050A,5:0,R/W,BW2_PLL,PLL bandwidth parameter
+0x050B,5:0,R/W,BW3_PLL,PLL bandwidth parameter
+0x050C,5:0,R/W,BW4_PLL,PLL bandwidth parameter
+0x050D,5:0,R/W,BW5_PLL,PLL bandwidth parameter
+Reg Address,Bit Field,Type,Name,Description
+0x050E,5:0,R/W,FAST_BW0_PLL,PLL fast bandwidth parameter
+0x050F,5:0,R/W,FAST_BW1_PLL,PLL fast bandwidth parameter
+0x0510,5:0,R/W,FAST_BW2_PLL,PLL fast bandwidth parameter
+0x0511,5:0,R/W,FAST_BW3_PLL,PLL fast bandwidth parameter
+0x0512,5:0,R/W,FAST_BW4_PLL,PLL fast bandwidth parameter
+0x0513,5:0,R/W,FAST_BW5_PLL,PLL fast bandwidth parameter
+0x0514,0,S,BW_UPDATE_PLL,"Must be set to 1 to update theBWx_PLL and FAST_BWx_PLLparameters"
+Reg Address,Bit Field,Type,Name,,Description
+0x0515,7:0,R/W,M_NUM,56-bit Number,
+0x0516,15:8,R/W,M_NUM,,
+0x0517,23:16,R/W,M_NUM,,
+0x0518,31:24,R/W,M_NUM,,
+0x0519,39:32,R/W,M_NUM,,
+0x051A,47:40,R/W,M_NUM,,
+0x051B,55:48,R/W,M_NUM,,
+Reg Address,Bit Field,Type,Name,,Description
+0x051C,7:0,R/W,M_DEN,32-bit Number,
+0x051D,15:8,R/W,M_DEN,,
+0x051E,23:16,R/W,M_DEN,,
+0x051F,31:24,R/W,M_DEN,,
+Reg Address,Bit Field,Type,Name,Description
+0x0520,0,S,M_UPDATE,Set this bit to update the M divider.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0521,3:0,R/W,M_FRAC_MODE,M feedback divider fractional mode.
+"",,,,Must be set to 0xB for proper operation.
+0x0521,4,R/W,M_FRAC_EN,M feedback divider fractional enable.
+"",,,,0: Integer-only division
+"",,,,1: Fractional (or integer) division - Required for
+"",,,,DCO operation.
+0x0521,5,R/W,Reserved,Must be set to 1
+Reg Address,Bit Field,Type,Name,Description
+0x052A,0,R/W,IN_SEL_REGCTRL,0 for pin controlled clock selection
+"",,,,1 for register controlled clock selection
+Reg Address,Bit Field,Type,Name,Description
+0x052A,2:1,R/W,IN_SEL,"0 for IN0, 1 for IN1,"
+"",,,,"2 for IN2, 3 for IN3 (or FB_IN)"
+Reg Address,Bit Field,Type,Name,Description
+0x052B,0,R/W,FASTLOCK_AUTO_EN,Applies only when FASTLOCK_MAN = 0 (see be-
+"",,,,low):
+"",,,,0 to disable auto fast lock when the DSPLL is out
+"",,,,of lock.
+"",,,,1 to enable auto fast lock.
+0x052B,1,R/W,FASTLOCK_MAN,0 for normal operation (see above)
+"",,,,1 to force fast lock
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x052C,0,R/W,HOLD_EN,Holdover enable,
+"",,,,0: Holdover Disabled,
+"",,,,1: Holdover Enabled (default),
+0x052C,3,R/W,HOLD_RAMP_BYP,HOLD_RAMP_BYP,
+0x052C,4,R/W,HOLDEXIT_BW_SEL1,Holdover Exit Bandwidth select. Selects the exit,
+"",,,,bandwidth from Holdover when ramped exit is dis-,
+"",,,,abled (HOLD_RAMP_BYP = 1).,
+"",,,,0: Exit Holdover using Holdover Exit or Fastlock,
+"",,,,bandwidths (default). See HOLDEXIT_BW_SEL0,
+"",,,,(0x059B[6]) for additional information.,
+"",,,,1: Exit Holdover using the Normal loop bandwidth,
+0x052C,7:5,R/W,RAMP_STEP_INTERVAL,Time Interval of the frequency ramp steps when,
+"",,,,ramping between inputs or when exiting holdover.,
+"",,,,Calculated by CBPro based on selection.,
+Reg Address,Bit Field,Type,Name,Description
+0x052D,1,R/W,HOLD_RAMPBYP_NOH-,Set by CBPro.
+"",,,IST,
+Reg Address,Bit Field,Type,Name,Description
+0x052E,4:0,R/W,HOLD_HIST_LEN,5-bit value
+Reg Address,Bit Field,Type,Name,Description
+0x052F,4:0,R/W,HOLD_HIST_DELAY,5-bit value
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0531,4:0,R/W,HOLD_REF_COUNT_FRC,5-bit value
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0532,7:0,R/W,HOLD_15M_CYC_COUNT,Value calculated by CBPro
+0x0533,15:8,R/W,HOLD_15M_CYC_COUNT,
+0x0534,23:16,R/W,HOLD_15M_CYC_COUNT,
+Reg Address,Bit Field,Type,Name,Description
+0x0535,0,R/W,FORCE_HOLD,"0 for normal operation1 for force holdover"
+Reg Address,Bit Field,Type,Name,Description
+0x0536,1:0,R/W,CLK_SWTCH_MODE,"0 = manual1 = automatic/non-revertive2 = automatic/revertive3 = reserved"
+Reg Address,Bit Field,Type,Name,Description
+0x0536,2,R/W,HSW_EN,"0 glitchless switching mode (phase buildoutturned off)1 hitless switching mode (phase buildoutturned on) 1"
+"","Note:1. Hitless switching and zero delay mode are incompatible.",,,
+"",Reg Address,Bit Field,Type,Name,Description
+0x0537,3:0,R/W,IN_LOS_MSK,"For each clock input LOS alarm:0 to use LOS in the clock selection logic1 to mask LOS from the clock selection logic",
+0x0537,7:4,R/W,IN_OOF_MSK,"For each clock input OOF alarm:0 to use OOF in the clock selection logic1 to mask OOF from the clock selection logic",
+Reg Address,Bit Field,Type,Name,Description
+0x0538,2:0,R/W,IN0_PRIORITY,"The priority for clock input 0 is:0 no priority1 for priority 12 for priority 23 for priority 34 for priority 45 to 7 are reserved"
+0x0538,6:4,R/W,IN1_PRIORITY,"The priority for clock input 1 is:0 no priority1 for priority 12 for priority 23 for priority 34 for priority 45 to 7 are reserved"
+Reg Address,Bit Field,Type,Name,Description
+0x0539,2:0,R/W,IN2_PRIORITY,"The priority for clock input 2 is:0 no priority1 for priority 12 for priority 23 for priority 34 for priority 45 to 7 are reserved"
+0x0539,6:4,R/W,IN3_PRIORITY,"The priority for clock input 3 is:0 no priority1 for priority 12 for priority 23 for priority 34 for priority 45 to 7 are reserved"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x053A,1:0,R/W,HSW_MODE,"1: Default setting, do not modify0, 2, 3: Reserved"
+0x053A,3:2,R/W,HSW_PHMEAS_CTRL,"0: Default setting, do not modify1, 2, 3: Reserved"
+Reg Address,Bit Field,Type,Name,Description
+0x053B,7:0,R/W,HSW_PHMEAS_THR,10-bit value. Set by CBPro.
+0x053C,9:8,R/W,HSW_PHMEAS_THR,
+Reg Address,Bit Field,Type,Name,Description
+0x053D,4:0,R/W,HSW_COARSE_PM_LEN,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x053E,4:0,R/W,HSW_COARSE_PM_DLY,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x053F,1,R/O,HOLD_HIST_VALID,"1 = there is enough historical frequency da-ta collected for valid holdover."
+0x053F,2,R/O,FASTLOCK_STATUS,1 = PLL is in Fast Lock operation
+Reg Address,Bit Field,Type,Name,Description
+0x0540,7:0,R/W,RESERVED,"This register is used when making certainchanges to the device. See Section 4.2 Dy-namic PLL Changes for more information."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0588,3:0,R/W,HSW_FINE_PM_LEN,Set by CBPro.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0589,7:0,R/W,PFD_EN_DELAY,Set by CBPro.
+0x058A,12:8,R/W,PFD_EN_DELAY,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x058B,7:0,R/W,HSW_MEAS_SETTLE,Set by CBPro.
+0x058C,15:8,R/W,HSW_MEAS_SETTLE,Set by CBPro.
+0x058D,19:16,R/W,HSW_MEAS_SETTLE,Set by CBPro.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059B,1,R/W,INIT_LP_CLOSE_HO,Set by CBPro.
+0x059B,4,R/W,HOLD_PRESERVE_HIST,Set by CBPro.
+0x059B,5,R/W,HOLD_FRZ_WITH_INTONLY,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059B,6,R/W,HOLDEXIT_BW_SEL0,"Set by CBPro.See HOLDEXIT_BW_SEL1"
+0x059B,7,R/W,HOLDEXIT_STD_BO,Set by CBPro.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059C,7,R/W,HOLD_RAMPBP_NOHIST,Set by CBPro
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059C,6,R/W,HOLDEXIT_ST_BO,Set by CBPro
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059D,5:0,R/W,HOLDEXIT_BW0,"Set by CBPro to set the PLL bandwidthwhen exiting holdover, works with HOL-DEXIT_BW_SEL0 and HOLD_BW_SEL1"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059E,5:0,R/W,HOLDEXIT_BW1,"Set by CBPro to set the PLL bandwidthwhen exiting holdover; works with HOL-DEXIT_BW_SEL0 and HOLD_BW_SEL1."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x059F,5:0,R/W,HOLDEXIT_BW2,"Set by CBPro to set the PLL bandwidthwhen exiting holdover, works with HOL-DEXIT_BW_SEL0 and HOLD_BW_SEL1"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x05A0,5:0,R/W,HOLDEXIT_BW3,"Set by CBPro to set the PLL bandwidthwhen exiting holdover, works with HOL-DEXIT_BW_SEL0 and HOLD_BW_SEL1"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x05A1,5:0,R/W,HOLDEXIT_BW4,Set by CBPro to set the PLL bandwidth
+"",,,,"when exiting holdover, works with HOL-"
+"",,,,DEXIT_BW_SEL0 and HOLD_BW_SEL1
+Reg Address,Bit Field,Type,Setting Name,Description
+0x05A2,5:0,R/W,HOLDEXIT_BW5,Set by CBPro to set the PLL bandwidth
+"",,,,"when exiting holdover, works with HOL-"
+"",,,,DEXIT_BW_SEL0 and HOLD_BW_SEL1
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x05A4,7:0,R/W,HSW_LIMIT,Set by CBPro,
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x05A5,0,R/W,HSW_LIMIT_ACTION,Set by CBPro,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x05A6,2:0,R/W,RAMP_STEP_SIZE,Size of the frequency ramp steps when
+"",,,,ramping between inputs or when exiting
+"",,,,holdover.
+"",,,,Calculated by CBPro based on selection.
+0x05A6,3,R/W,RAMP_SWITCH_EN,Ramp Switching Enable
+"",,,,0: Disable Ramp Switching
+"",,,,1: Enable Ramp Switching (default)
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x05AC,0,R/W,OUT_MAX_LIMIT_EN,Set by CBPro,
+0x05AC,3,R/W,HOLD_SETTLE_DET_EN,Set by CBPro,
+Reg Address,Bit Field,Type,Setting Name,,Description
+0x05AD,7:0,R/W,OUT_MAX_LIMIT_LMT,Set by CBPro,
+0x05AE,15:8,R/W,OUT_MAX_LIMIT_LMT,Set by CBPro,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x05B1,7:0,R/W,HOLD_SETTLE_TARGET,Set by CBPro
+0x05B2,15:8,R/W,HOLD_SETTLE_TARGET,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x090E,0,R/W,XAXB_EXTCLK_EN,"0 to use a crystal at the XAXB pins1 to use an external clock source at the XAXB pins"
+Reg Address,Bit Field,Type,Name,Description
+0x0943,0,R/W,IO_VDD_SEL,"0 for 1.8 V external connections1 for 3.3 V external connections"
+Reg Address,Bit Field,Type,Name,Description
+0x0949,3:0,R/W,IN_EN,"0: Disable and Powerdown Input Buffer1: Enable Input Buffer for IN3–IN0."
+0x0949,7:4,R/W,IN_PULSED_CMOS_EN,"0: Standard Input Format1: Pulsed CMOS Input Format for IN3–IN0. See Section5. Clock Inputs for more information."
+Reg Address,Bit Field,Type,Setting Name,Description
+0x094A,3:0,R/W,INX_TO_PFD_EN,Value calculated in CBPro
+Reg Address,Bit Field,Type,Setting Name,Description
+0x094E,7:0,R/W,REFCLK_HYS_SEL,Value calculated in CBPro
+0x094F,11:8,R/W,REFCLK_HYS_SEL,
+Reg Address,Bit Field,Type,Setting Name,Description
+0x094F,7:4,R/W,IN_CMOS_USE1P8,"0 = selects the Pulsed CMOS input buffer mode1 = selects the LVCMOS input buffer mode"
+Reg Address,Bit Field,Type,Setting Name,Description
+0x095E,0,R/W,"MXAXB_INTE-GER",Set by CBPro.
+Reg Address,Bit Field,Type,Setting Name,Description
+0x0A02,4:0,R/W,N_ADD_0P5,Value calculated in CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0A03,4:0,R/W,N_CLK_TO_OUTX_EN,Routes Multisynth outputs to output driver muxes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A04,4:0,R/W,N_PIBYP,"Output Multisynth integer divide mode. Bit 0 for ID0, Bit1 for ID1, etc.0: Nx divider is fractional.1: Nx divider is integer."
+Reg Address,Bit Field,Type,Name,Description
+0x0A05,4:0,R/W,N_PDNB,"Powers down the N dividers.Set to 0 to power down unused N dividers.Must set to 1 for all active N dividers.See also related registers 0x0A03 and 0x0B4A."
+Reg Address,Bit Field,Type,Name,Description
+0x0A14,3,R/W,N0_HIGH_FREQ,Set by CBPro.
+0x0A1A,3,R/W,N1_HIGH_FREQ,Set by CBPro.
+0x0A20,3,R/W,N2_HIGH_FREQ,Set by CBPro.
+0x0A26,3,R/W,N3_HIGH_FREQ,Set by CBPro.
+0x0A2C,3,R/W,N4_HIGH_FREQ,Set by CBPro.
+Reg Address,Bit Field,Type,Name,Description
+0x0A38,7:0,R/W,N0_PHASE_STEP,"N0 step size from 1 to 255 in units of Tvco, the VCO"
+"",,,,period.
+Reg Address,Bit Field,Type,Name,Description
+0x0A39,7:0,R/W,N0_PHASE_COUNT,Lower byte of number of N0 step size changes.
+0x0A3A,15:8,R/W,N0_PHASE_COUNT,Upper byte of number of N0 step size changes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A3B,0,R/W,N0_PHASE_INC,Writing a 1 initiates a phase increment.
+0x0A3B,1,R/W,N0_PHASE_DEC,Writing a 1 initiates a phase decrement.
+Reg Address,Bit Field,Type,Name,Description
+0x0A3C,7:0,R/W,N1_PHASE_STEP,"N1 step size from 1 to 255 in units of Tvco, the VCO"
+"",,,,period.
+Reg Address,Bit Field,Type,Name,Description
+0x0A3D,7:0,R/W,N1_PHASE_COUNT,Lower byte of number of N1 step size changes.
+0x0A3E,15:8,R/W,N1_PHASE_COUNT,Upper byte of number of N1 step size changes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A3F,0,R/W,N1_PHASE_INC,Writing a 1 initiates a phase increment.
+0x0A3F,1,R/W,N1_PHASE_DEC,Writing a 1 initiates a phase decrement.
+Reg Address,Bit Field,Type,Name,Description
+0x0A40,7:0,R/W,N2_PHASE_STEP,"N2 step size from 1 to 255 in units of Tvco, the VCOperiod."
+Reg Address,Bit Field,Type,Name,Description
+0x0A41,7:0,R/W,N2_PHASE_COUNT,Lower byte of number of N2 step size changes.
+0x0A42,15:8,R/W,N2_PHASE_COUNT,Upper byte of number of N2 step size changes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A43,0,R/W,N2_PHASE_INC,Writing a 1 initiates a phase increment.
+0x0A43,1,R/W,N2_PHASE_DEC,Writing a 1 initiates a phase decrement.
+Reg Address,Bit Field,Type,Name,Description
+0x0A44,7:0,R/W,N3_PHASE_STEP,"N3 step size from 1 to 255 in units of Tvco, the VCOperiod."
+Reg Address,Bit Field,Type,Name,Description
+0x0A45,7:0,R/W,N3_PHASE_COUNT,Lower byte of number of N3 step size changes.
+0x0A46,15:8,R/W,N3_PHASE_COUNT,Upper byte of number of N3 step size changes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A47,0,R/W,N3_PHASE_INC,Writing a 1 initiates a phase increment.
+0x0A47,1,R/W,N3_PHASE_DEC,Writing a 1 initiates a phase decrement.
+Reg Address,Bit Field,Type,Name,Description
+0x0A48,7:0,R/W,N4_PHASE_STEP,"N4 step size from 1 to 255 in units of Tvco, the VCOperiod."
+Reg Address,Bit Field,Type,Name,Description
+0x0A49,7:0,R/W,N4_PHASE_COUNT,Lower byte of number of N4 step size changes.
+0x0A4A,15:8,R/W,N4_PHASE_COUNT,Upper byte of number of N4 step size changes.
+Reg Address,Bit Field,Type,Name,Description
+0x0A4B,0,R/W,N4_PHASE_INC,Writing a 1 initiates a phase increment.
+0x0A4B,1,R/W,N4_PHASE_DEC,Writing a 1 initiates a phase decrement.
+Reg Address,Bit Field,Type,Name,,Description
+0x0B24,7:0,R/W,RESERVED,Reserved.,
+"",,,,This register is used when making certain changes to,
+"",,,,the device. See Section 4.2 Dynamic PLL Changes for,
+"",,,,more information.,
+Reg Address,Bit Field,Type,Name,,Description
+0x0B25,7:0,R/W,RESERVED,Reserved.,
+"",,,,This register is used when making certain changes to,
+"",,,,the device. See Section 4.2 Dynamic PLL Changes for,
+"",,,,more information.,
+Reg Address,Bit Field,Type,Name,Description
+0x0B2E,6:0,R/W,MS_OD_G_TIMEOUT,Controls the synchronous output disable timeout value
+"",,,,during a hard reset.
+0x0B2E,7,R/W,MS_OD_G_TIMEOUT_EN,
+Reg Address,Bit Field,Type,Name,Description
+0x0B44,3:0,R/W,PDIV_FRACN_CLK_DIS,Clock disable for the fractional divide of the input P di-
+"",,,,"viders. [P3, P2, P1, P0]. Must be set to 0 if the P divider"
+"",,,,has a fractional value.
+"",,,,0: Enable the clock to the fractional divide part of the P
+"",,,,divider
+"",,,,1: Disable the clock to the fractional divide part of the P
+"",,,,divider
+Reg Address,Bit Field,Type,Name,Description
+0x0B44,5,R/W,FRACN_CLK_DIS_PLL,Clock disable for the fractional divide of the M divider in
+"",,,,PLLB. Must be set to 0 if this M divider has a fractional
+"",,,,value.
+"",,,,0: Enable the clock to the fractional divide part of the M
+"",,,,divider
+"",,,,1: Disable the clock to the fractional divide part of the M
+"",,,,divider.
+Reg Address,Bit Field,Type,Name,Description
+0x0B46,3:0,R/W,LOS_CLK_DIS,Set to 0 for normal operation.
+Reg Address,Bit Field,Type,Name,Description
+0x0B47,4:0,R/W,OOF_CLK_DIS,Set to 0 for normal operation.
+Reg Address,Bit Field,Type,Name,Description
+0x0B48,4:0,R/W,OOF_DIV_CLK_DIS,Set to 0 for normal operation.
+"",,,,Digital OOF divider clock user disable. Bits 3:0 are for
+"",,,,"IN3,2,1,0, Bit 4 is for OOF for the XAXB input."
+Reg Address,Bit Field,Type,Name,Description
+0x0B4A,4:0,R/W,N_CLK_DIS,Disable digital clocks to N dividers. Must be set to 0 to
+"",,,,use each N divider. See also related registers 0x0A03
+"",,,,and 0x0A05.
+Reg Address,Bit Field,Type,Name,Description
+0x0B57,7:0,R/W,VCO_RESET_CALCODE,12-bit value. Controls the VCO frequency when a reset
+"",,,,occurs.
+0x0B58,11:8,R/W,VCO_RESET_CALCODE,
+Reg Address,Bit Field,Type,Name,,Description
+0x0C02,2:0,R/W,VAL_DIV_CTL0,Set by CBPro,
+0x0C02,4,R/W,VAL_DIV_CTL1,Set by CBPro,
