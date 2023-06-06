@@ -639,7 +639,7 @@ Reg Address,Bit Field,Type,Name,Description
 0x053F,1,R/O,HOLD_HIST_VALID,"1 = there is enough historical frequency da-ta collected for valid holdover."
 0x053F,2,R/O,FASTLOCK_STATUS,1 = PLL is in Fast Lock operation
 Reg Address,Bit Field,Type,Name,Description
-0x0540,7:0,R/W,RESERVED,"This register is used when making certainchanges to the device. See Section 4.2 Dy-namic PLL Changes for more information."
+0x0540,7:0,R/W,AMBLE3,"This register is used when making certainchanges to the device. See Section 4.2 Dy-namic PLL Changes for more information."
 Reg Address,Bit Field,Type,Setting Name,Description
 0x0588,3:0,R/W,HSW_FINE_PM_LEN,Set by CBPro.
 Reg Address,Bit Field,Type,Setting Name,Description
@@ -770,12 +770,12 @@ Reg Address,Bit Field,Type,Name,Description
 0x0A4B,0,R/W,N4_PHASE_INC,Writing a 1 initiates a phase increment.
 0x0A4B,1,R/W,N4_PHASE_DEC,Writing a 1 initiates a phase decrement.
 Reg Address,Bit Field,Type,Name,,Description
-0x0B24,7:0,R/W,RESERVED,Reserved.,
+0x0B24,7:0,R/W,AMBLE0,Reserved.,
 "",,,,This register is used when making certain changes to,
 "",,,,the device. See Section 4.2 Dynamic PLL Changes for,
 "",,,,more information.,
 Reg Address,Bit Field,Type,Name,,Description
-0x0B25,7:0,R/W,RESERVED,Reserved.,
+0x0B25,7:0,R/W,AMBLE1,Reserved.,
 "",,,,This register is used when making certain changes to,
 "",,,,the device. See Section 4.2 Dynamic PLL Changes for,
 "",,,,more information.,

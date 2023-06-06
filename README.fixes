@@ -21,3 +21,6 @@ table 16.169: inconsistent numbering of bitfields. In any case, the manual
                  0x094f 11:0 REFCLK_HYS_SEL
 
 table 16.118: extra blanks in some setting names 'N0_ FSTEPW'; manually fixed in CSV
+
+Rename: 0xb24, 0xb25, 0x540 RESERVED => 'AMBLE0', 'AMBLE1', 'AMBLE2' as these are
+        required for pre- and post-amble.
