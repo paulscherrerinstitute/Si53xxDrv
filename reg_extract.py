@@ -150,6 +150,8 @@ class RegSet:
               right = left
             if ( len(flds[2]) != 0 ):
               acc  = flds[2]
+            if acc == "R":
+              acc  = "R/O"
             # else (if flds[2] empty) use previous value (table value from above)
             if ( len(flds[3]) != 0 ):
               name = flds[3]
@@ -191,6 +193,9 @@ class RegSet:
       if len(k) == 0:
         print("Consistency check: empty name @0x{:x}".format(v.pieces[0].addr[0]))
         flag += 1
+      # validate 'access'
+      if not v.access in ["S", "R/O", "R/W"]:
+        print("Consistency check: unexpected access: {} of {}".format( v.access, v.name ) )
       # find settings with multiple unmerged pieces
       n = len(v.pieces)
       if n > 1:
