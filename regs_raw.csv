@@ -818,3 +818,9 @@ Reg Address,Bit Field,Type,Name,Description
 Reg Address,Bit Field,Type,Name,,Description
 0x0C02,2:0,R/W,VAL_DIV_CTL0,Set by CBPro,
 0x0C02,4,R/W,VAL_DIV_CTL1,Set by CBPro,
+Reg Address,Bit Field,Type,Name,Description
+0x0C03,3:0,R/W,IN_CLK_VAL_PWR_UP_DIS,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0C07,0,R/W,IN_CLK_VAL_EN,Set by CBPro
+Reg Address,Bit Field,Type,Name,Description
+0x0C08,7:0,R/W,IN_CLK_VAL_TIME,Set by CBPro
