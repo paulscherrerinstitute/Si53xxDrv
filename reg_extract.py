@@ -1,6 +1,7 @@
 import re
 import io
 import csv
+import sys
 
 # hex-number pattern
 hexp  = re.compile("^[ ]*0x[0-9a-fA-F]+$")
@@ -144,6 +145,10 @@ class Setting:
         # try next
         pass
     return self
+
+  def print(self, of=sys.stdout):
+    p       = self.piece
+    print("{:35s}: [{:2d}:{:2d}]@0x{:04x} ({:s})".format(self.name, p.left, p.right, p.addr[0], self.access), file=of)
 
 class RegSet:
   def __init__(self, fnam='regs_raw.csv', *args, **kwargs):
@@ -326,22 +331,26 @@ class RegSet:
     return flag
 
   # annotate a CBP register file
-  def annotateCBP(self, fnam):
+  def annotateCBP(self, fnam, of=sys.stdout):
     pat = re.compile("^[ ]*(0x[0-9a-fA-F]+)[ ]*[,][ ]*(0x[0-9a-fA-F]*)")
     with io.open(fnam, 'r') as f: 
       for l in f:
         m = pat.match(l)
-        print(l[:-1], end = '')
+        print(l[:-1], end = '', file=of)
         if (not m is None):
-          print('# ', end='')
+          print('# ', end='', file=of)
           a = int(m.groups()[0],0)
           v = int(m.groups()[1],0)
           try:
             for s in self.find(a):
-              print(" {}".format( s.name ), end='')
+              print(" {}".format( s.name ), end='', file=of)
           except KeyError:
-            print(" *UNDOCUMENTED*", end='')
-        print()
+            print(" *UNDOCUMENTED*", end='', file=of)
+        print(file=of)
+
+  def printSetting(self, nam, of=sys.stdout):
+    setting = self._d[nam]
+    setting.print( of )
 
 rs=RegSet()
 rs.consistencyCheck()
