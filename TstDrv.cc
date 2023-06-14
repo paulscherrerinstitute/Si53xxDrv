@@ -79,6 +79,16 @@ TstDrv::printRegs(FILE *f)
 	}
 }
 
+class TstDev : public Si5395 {
+	public:
+		TstDev()
+		: Si5395( std::make_shared<TstDrv>( TstDrv() ) ) {}
+        void readCSV(const char *fnam)
+		{
+			Si5395::readCSV( *feil( fnam ) );
+		}
+};
+
 int
 main(int argc, char **argv)
 {
@@ -90,10 +100,11 @@ main(int argc, char **argv)
 		}
 	}
 
-	std::shared_ptr<TstDrv> drv = std::make_shared<TstDrv>( TstDrv() );
-	Si5395 si(drv);
+//	std::shared_ptr<TstDrv> drv = std::make_shared<TstDrv>( TstDrv() );
+//	Si5395 si(drv);
+	TstDev si;
 
-	si.readCSV( *feil( fnam ) );
+	si.readCSV( fnam );
 
 	unsigned long long n = si.get( "N0_NUM" );
 	unsigned long long d = si.get( "N0_DEN" );
