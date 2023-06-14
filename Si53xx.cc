@@ -1,5 +1,7 @@
 
 #include "Si53xx.h"
+#include <stdarg.h>
+#include <time.h>
 
 using namespace Si53xx;
 
@@ -10,6 +12,39 @@ Reg::Reg(RegAddr addr)
   valid     ( false )
 {
 }
+
+// Intended to be used locally; not particularly efficient.
+// For small strings holding Settings names.
+class FMT {
+	private:
+		char buf[64];
+	public:
+		FMT(const char *fmt, ...)
+		{
+			va_list ap;
+			va_start(ap, fmt);
+			int st = vsnprintf(this->buf, sizeof(this->buf), fmt, ap);
+			va_end(ap);
+			if ( st >= sizeof(this->buf) ) {
+				throw std::range_error("FMT buffer not big enough");
+			}
+		}
+
+		FMT(const FMT &orig)
+		{
+			strcpy(this->buf, orig.buf);
+		}
+
+		FMT & operator=(const FMT &orig)
+		{
+			::strcmp( this->buf, orig.buf );
+			return *this;
+		}
+
+		const char *operator*() const {
+			return this->buf;
+		}
+};
 
 void
 Reg::addUser(const Setting *s)
@@ -81,9 +116,9 @@ Setting::Setting(const Key &k, const char *name, const string &access, unsigned 
 Access
 Si53xx::toAccess(const std::string &s)
 {
-	if ( s == "RO" ) {
+	if ( s == "R/O" ) {
 		return Access::RO;
-	} else if ( s == "RW" ) {
+	} else if ( s == "R/W" ) {
 		return Access::RW;
 	} else if ( s == "S" ) {
 		return Access::SelfClear;
@@ -91,9 +126,10 @@ Si53xx::toAccess(const std::string &s)
 	throw std::invalid_argument("Si53xx::toAccess: unable to convert string to 'Access' type");
 }
 
-Si53xx::Si53xx::Si53xx(I2CDriverShp drv, const std::vector<Setting> &settings)
-: drv   ( drv ),
-  pageNo( -1  )
+Si53xx::Si53xx::Si53xx(I2CDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
+: drv   ( drv   ),
+  pageNo( -1    ),
+  params( p     )
 {
 	// create the array of all registers
 	for (int i = 0; i <= 0xfff; i++ ) {
@@ -102,7 +138,7 @@ Si53xx::Si53xx::Si53xx(I2CDriverShp drv, const std::vector<Setting> &settings)
 
 	// register settings
 	for (auto it = settings.begin(); it != settings.end(); ++it) {
-		SettingShp s = std::make_shared<Setting>( *it );
+		SettingShp s = *it;
 		// map the register
 		auto rv = this->settings.insert( { s->getName().c_str(), s } );
 		if ( ! rv.second ) {
@@ -112,6 +148,11 @@ Si53xx::Si53xx::Si53xx(I2CDriverShp drv, const std::vector<Setting> &settings)
 		for ( auto a = s->getAddrs().begin(); a != s->getAddrs().end(); ++a ) {
 			this->regs.at( *a ).addUser( s.get() );
 		}
+	}
+
+	for (auto it = this->settings.begin(); it != this->settings.end(); ++it ){
+		auto kv = *it;
+		printf("in map %p: %s\n", kv.first, kv.first);
 	}
 }
 
@@ -127,7 +168,7 @@ Si53xx::Si53xx::readRegs(unsigned offset, unsigned n, uint8_t *buf)
 			// we have a valid cache and all self-clearing bits are reset
 			*buf++ = v;
 			offset++;
-			n++;
+			n--;
 		} else {
 			this->readRange( offset, n, buf );
 			while ( n > 0 ) {
@@ -213,7 +254,7 @@ Si53xx::Si53xx::writeRange(unsigned offset, unsigned n, uint8_t *buf)
 Si53xx::Si53xx::ValType
 Si53xx::Si53xx::get(const std::string &k)
 {
-	return this->get( this->settings.at( k.c_str() ) );
+	return this->get( this->at( k ) );
 }
 
 Si53xx::Si53xx::ValType
@@ -297,7 +338,7 @@ Si53xx::Si53xx::set(SettingShp s, ValType v)
 void
 Si53xx::Si53xx::set(const std::string &k, ValType v)
 {
-	return this->set( this->settings.at( k.c_str() ), v );
+	return this->set( this->at( k ), v );
 }
 
 void
@@ -335,4 +376,278 @@ int      idx  = 0;
 	if ( idx > 0 ) {
 		this->writeRegs( off, idx, rbuf );
 	}
+}
+
+void
+Si53xx::Si53xx::getDivider(DividerSettings &s, Si53xx::ValType *nump, Si53xx::ValType *denp)
+{
+	*nump = get( s.num );
+	*denp = get( s.den );
+}
+
+double
+Si53xx::Si53xx::getDivider(DividerSettings &s)
+{
+ValType n, d;
+	getDivider( s, &n, &d );
+	return (double)n / (double)d;
+}
+
+void
+Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValType den)
+{
+	if ( s.requirePllOff && ! isPllOff() ) {
+		throw std::logic_error("Si53xx::setDivider: cannot set divider while PLL is running");
+	}
+	set( s.num,    num );
+	set( s.den,    den );
+	set( s.update, 1   );
+}
+
+void
+Si53xx::Si53xx::setDivider(DividerSettings &s, double val)
+{
+	uint64_t n, d;
+	uint64_t maxn, maxd;
+
+
+	maxn = (1 << (s.num->getLeft() - s.num->getRight())); maxn |= (maxn - 1);
+	maxd = (1 << (s.den->getLeft() - s.den->getRight())); maxd |= (maxd - 1);
+
+	ratapp( val, maxn, maxd, &n, &d );
+
+	setDivider( s, n, d );
+}
+
+Si53xx::Si53xx::DividerSettings
+Si53xx::Si53xx::getDividerSettings(const char *prefix)
+{
+	DividerSettings s;
+	s.num           = this->at( *FMT( "%s_NUM",    prefix ) );
+	s.den           = this->at( *FMT( "%s_DEN",    prefix ) );
+	s.update        = this->at( *FMT( "%s_UPDATE", prefix ) );
+	s.requirePllOff = (prefix[0] != 'N');
+	return s;
+}
+
+Si53xx::Si53xx::DividerSettings
+Si53xx::Si53xx::getNDividerSettings(unsigned idx)
+{
+	return getDividerSettings( *FMT( "N%d", idx ) );
+}
+
+Si53xx::Si53xx::DividerSettings
+Si53xx::Si53xx::getMDividerSettings()
+{
+	return getDividerSettings( "M" );
+}
+
+Si53xx::Si53xx::DividerSettings
+Si53xx::Si53xx::getPDividerSettings(unsigned idx)
+{
+	return getDividerSettings( *FMT( "P%d", idx ) );
+}
+
+Si53xx::Si53xx::DividerSettings
+Si53xx::Si53xx::getMXAXBDividerSettings()
+{
+	return getDividerSettings( "MXAXB" );
+}
+
+void
+Si53xx::Si53xx::getNDivider(unsigned idx, Si53xx::ValType *nump, Si53xx::ValType *denp)
+{
+	DividerSettings s(this->getNDividerSettings( idx ) );
+	getDivider( s, nump, denp );
+}
+
+double
+Si53xx::Si53xx::getNDivider(unsigned idx)
+{
+	DividerSettings s(this->getNDividerSettings( idx ) );
+	return getDivider( s );
+}
+
+void
+Si53xx::Si53xx::setNDivider(unsigned idx, Si53xx::ValType num, Si53xx::ValType den)
+{
+	DividerSettings s(this->getNDividerSettings( idx ) );
+	setDivider( s, num, den );
+}
+
+void
+Si53xx::Si53xx::setNDivider(unsigned idx, double  val)
+{
+	DividerSettings s(this->getNDividerSettings( idx ) );
+	setDivider( s, val );
+}
+
+void
+Si53xx::Si53xx::getPDivider(unsigned idx, Si53xx::ValType *nump, Si53xx::ValType *denp)
+{
+	DividerSettings s(this->getPDividerSettings( idx ) );
+	getDivider( s, nump, denp );
+}
+
+double
+Si53xx::Si53xx::getPDivider(unsigned idx)
+{
+	DividerSettings s(this->getPDividerSettings( idx ) );
+	return getDivider( s );
+}
+
+void
+Si53xx::Si53xx::setPDivider(unsigned idx, Si53xx::ValType num, Si53xx::ValType den)
+{
+	DividerSettings s(this->getPDividerSettings( idx ) );
+	setDivider( s, num, den );
+}
+
+void
+Si53xx::Si53xx::setPDivider(unsigned idx, double  val)
+{
+	DividerSettings s(this->getPDividerSettings( idx ) );
+	setDivider( s, val );
+}
+
+void
+Si53xx::Si53xx::getMDivider(Si53xx::ValType *nump, Si53xx::ValType *denp)
+{
+	DividerSettings s(this->getMDividerSettings() );
+	getDivider( s, nump, denp );
+}
+
+double
+Si53xx::Si53xx::getMDivider()
+{
+	DividerSettings s(this->getMDividerSettings() );
+	return getDivider( s );
+}
+
+void
+Si53xx::Si53xx::setMDivider(Si53xx::ValType num, Si53xx::ValType den)
+{
+	DividerSettings s(this->getMDividerSettings() );
+	setDivider( s, num, den );
+}
+
+void
+Si53xx::Si53xx::setMDivider(double  val)
+{
+	DividerSettings s(this->getMDividerSettings() );
+	setDivider( s, val );
+}
+
+void
+Si53xx::Si53xx::getMXAXBDivider(Si53xx::ValType *nump, Si53xx::ValType *denp)
+{
+	DividerSettings s(this->getMXAXBDividerSettings() );
+	getDivider( s, nump, denp );
+}
+
+double
+Si53xx::Si53xx::getMXAXBDivider()
+{
+	DividerSettings s(this->getMXAXBDividerSettings() );
+	return getDivider( s );
+}
+
+void
+Si53xx::Si53xx::setMXAXBDivider(Si53xx::ValType num, Si53xx::ValType den)
+{
+	DividerSettings s(this->getMXAXBDividerSettings() );
+	setDivider( s, num, den );
+}
+
+void
+Si53xx::Si53xx::setMXAXBDivider(double  val)
+{
+	DividerSettings s(this->getMXAXBDividerSettings() );
+	setDivider( s, val );
+}
+
+
+static void
+Si53xx::ratapp(double x, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp)
+{
+uint64_t n2 = 0;
+uint64_t n1 = 1;
+uint64_t d2 = 1;
+uint64_t d1 = 0;
+
+uint64_t n, d, a;
+	
+	/* Keep computing convergents until we hit a max.
+	 * Compute 1/x actually (same result just with num/den switched);
+	 * which allows us to do the x != 0 test at the top of the loop
+	 */
+	while ( x != 0.0 ) {
+		x   = 1.0/x;
+		a   = (uint64_t)x;
+		/* Check against overflow */
+		if ( ( (double)a * (double)n1 + (double) n2 > (double) maxNum ) ) {
+			break;
+		}
+		if ( ( (double)a * (double)d1 + (double) d2 > (double) maxDen ) ) {
+			break;
+		}
+		n = a * n1 + n2;
+		d = a * d1 + d2;
+		if ( n > maxNum || d > maxDen ) {
+			break;
+		}
+		n2 = n1; n1 = n;
+		d2 = d1; d1 = d;
+		x -= a;
+	}
+	/* We started out approximating 1/x */
+	*nump = d1;
+	*denp = n1;
+}
+
+void
+Si53xx::Si53xx::sendPreamble()
+{
+	if ( isPllOff() ) {
+		throw std::logic_error("Si53xx::sendPreamble: preamble has already been sent?");
+	}
+	// send magical, undocumented values :-(
+	set( "AMBLE0", 0xC0 );
+	set( "AMBLE1", 0x00 );
+	set( "AMBLE2", 0x01 );
+	struct timespec ms300 = { tv_sec: 0, tv_nsec: 300000000 };
+	while ( nanosleep( &ms300, 0 ) )
+		;
+}
+
+void
+Si53xx::Si53xx::sendPostamble()
+{
+	if ( ! isPllOff() ) {
+		throw std::logic_error("Si53xx::sendPostable: postamble has already been sent?");
+	}
+	set( "BW_UPDATE_PLL", 1 );
+	set( "SOFT_RST_ALL",  1 );
+	// send magical, undocumented values :-(
+	set( "AMBLE2", 0x00 );
+	set( "AMBLE0", 0xC3 );
+	set( "AMBLE1", 0x02 );
+}
+
+bool
+Si53xx::Si53xx::isPllOff()
+{
+	return get("AMBLE2") != 0x00;
+}
+
+Si53xx::SettingShp
+Si53xx::Si53xx::at(const string &k)
+{
+	return settings.at( k.c_str() );
+}
+
+Si53xx::SettingShp
+Si53xx::Si53xx::at(const char *ch)
+{
+	return settings.at( ch );
 }

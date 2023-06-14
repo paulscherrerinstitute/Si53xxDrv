@@ -148,7 +148,7 @@ class Setting:
 
   def print(self, of=sys.stdout):
     p       = self.piece
-    print("{:35s}: [{:2d}:{:2d}]@0x{:04x} ({:s})".format(self.name, p.left, p.right, p.addr[0], self.access), file=of)
+    print("{:35s}: {:s} [{:2d}:{:2d}]@0x{:04x}".format(self.name, self.access, p.left, p.right, p.addr[0]), file=of)
 
 class RegSet:
   def __init__(self, fnam='regs_raw.csv', *args, **kwargs):
@@ -351,6 +351,23 @@ class RegSet:
   def printSetting(self, nam, of=sys.stdout):
     setting = self._d[nam]
     setting.print( of )
+
+  def writeCpp(self, device="Si5395", of=sys.stdout):
+    print("/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.py) -- DO NOT MODIFY */", file = of)
+    print("#include <Si53xx.h>", file = of)
+    print("namespace Si53xx {", file = of)
+    print("SettingVec {}Settings = {{".format(device), file = of, end='')
+    fmt = '{}\n\tSetting::mkSetting("{}","{}",{:d},{:d},{{{}}})'
+    beg = ''
+    for k,s in self._d.items():
+      p    = s.piece
+      regs = ""
+      for a in p.addr:
+        regs += "0x{:04x},".format( a )
+      print(fmt.format(beg, k, s.access, p.left, p.right, regs[:-1]), file = of, end = '')
+      beg  = ','
+    print("\n};", file = of)
+    print("}",    file = of)
 
 rs=RegSet()
 rs.consistencyCheck()

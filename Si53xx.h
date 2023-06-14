@@ -54,6 +54,7 @@ namespace Si53xx {
 	};
 
 	typedef shared_ptr<Setting> SettingShp;
+    typedef vector<SettingShp>  SettingVec;
 
 	class Setting {
 		private:
@@ -126,9 +127,16 @@ namespace Si53xx {
 
 	typedef shared_ptr<I2CDriver> I2CDriverShp;
 
+	class Si53xx;
+
+	struct Si53xxParams {
+		unsigned        numNDividers;
+		unsigned        numOutputs;
+	};
+
 	class Si53xx {
 		public:
-			Si53xx(I2CDriverShp drv, const std::vector<Setting> &);
+			Si53xx(I2CDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
 
 			typedef uint64_t ValType;
 
@@ -138,12 +146,13 @@ namespace Si53xx {
 			struct StrCmp {
 				int operator()(const char *a, const char *b) const
 				{
-					return strcmp(a,b);
+					return strcmp(a,b) < 0;
 				}
 			};
 
 			typedef map<const char *, SettingShp, StrCmp> Settings;
- 
+
+			Si53xxParams  params;
 			vector<Reg>   regs;
 			Settings      settings;
 			I2CDriverShp  drv;
@@ -162,10 +171,63 @@ namespace Si53xx {
 			virtual ValType get(SettingShp);
 			virtual void    set(SettingShp, ValType);
 
+			virtual bool    isPllOff();
+
+			struct DividerSettings {
+				SettingShp num;
+				SettingShp den;
+				SettingShp update;
+				bool       requirePllOff;
+			};
+
+			virtual DividerSettings getDividerSettings (const char *prefix);
+			virtual DividerSettings getNDividerSettings(unsigned idx);
+			virtual DividerSettings getMDividerSettings();
+			virtual DividerSettings getPDividerSettings(unsigned idx);
+			virtual DividerSettings getMXAXBDividerSettings();
+
+			virtual void    getDivider(DividerSettings &s,  ValType *num, ValType *den);
+			virtual double  getDivider(DividerSettings &s);
+			virtual void    setDivider(DividerSettings &s, ValType  num, ValType  den);
+			virtual void    setDivider(DividerSettings &s, double val);
+
 		public:
 			virtual ValType get(const std::string &k);
 			virtual void    set(const std::string &k, ValType v);
+
+			virtual SettingShp at(const std::string &k);
+			virtual SettingShp at(const char        *k);
+
+			virtual unsigned getNumNDividers() const { return params.numNDividers; }
+			virtual unsigned getNumOutputs()   const { return params.numOutputs;   }
+
+			virtual void     getNDivider(unsigned idx, ValType *num, ValType *den);
+			virtual double   getNDivider(unsigned idx);
+			virtual void     setNDivider(unsigned idx, ValType num, ValType den);
+			virtual void     setNDivider(unsigned idx, double  val);
+
+			virtual void     getPDivider(unsigned idx, ValType *num, ValType *den);
+			virtual double   getPDivider(unsigned idx);
+			virtual void     setPDivider(unsigned idx, ValType num, ValType den);
+			virtual void     setPDivider(unsigned idx, double  val);
+
+			virtual void     getMDivider( ValType *num, ValType *den);
+			virtual double   getMDivider();
+			virtual void     setMDivider(ValType num, ValType den);
+			virtual void     setMDivider(double  val);
+
+			virtual void     getMXAXBDivider( ValType *num, ValType *den);
+			virtual double   getMXAXBDivider();
+			virtual void     setMXAXBDivider(ValType num, ValType den);
+			virtual void     setMXAXBDivider(double  val);
+
+			virtual void     sendPreamble();
+			virtual void     sendPostamble();
 	};
+
+	/* Rational approximation of a floating-point number */
+	static void ratapp(double n, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp);
+
 }
 
 #endif

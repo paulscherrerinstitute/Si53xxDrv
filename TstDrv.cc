@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <memory>
 #include <getopt.h>
+#include "Si5395.h"
+
+using namespace Si53xx;
 
 class feil {
 	private:
@@ -76,7 +79,6 @@ TstDrv::printRegs(FILE *f)
 	}
 }
 
-
 int
 main(int argc, char **argv)
 {
@@ -89,8 +91,16 @@ main(int argc, char **argv)
 	}
 
 	std::shared_ptr<TstDrv> drv = std::make_shared<TstDrv>( TstDrv() );
-	Si53xx::Si53xx si(drv, {});
+	Si5395 si(drv);
+
 	si.readCSV( *feil( fnam ) );
+
+	unsigned long long n = si.get( "N0_NUM" );
+	unsigned long long d = si.get( "N0_DEN" );
+
+	printf("N0: %llu/%llu  = 0x%llx/0x%llx = %lg\n", n, d, n, d, (double)n/(double)d);
+
+	si.set( "N0_NUM", 256 );
 
 //	drv->printRegs();
 }
