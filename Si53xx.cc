@@ -2,6 +2,7 @@
 #include "Si53xx.h"
 #include <stdarg.h>
 #include <time.h>
+#include "RAIIfeil.h"
 
 using namespace Si53xx;
 
@@ -340,6 +341,20 @@ Si53xx::Si53xx::set(const std::string &k, ValType v)
 {
 	return this->set( this->at( k ), v );
 }
+
+
+void
+Si53xx::Si53xx::readCSV(const std::string &fn)
+{
+	this->readCSV( fn.c_str() );
+}
+
+void
+Si53xx::Si53xx::readCSV(const char *fn)
+{
+	this->readCSV( *RAIIfeil( fn ) );
+}
+
 
 void
 Si53xx::Si53xx::readCSV(FILE *f)

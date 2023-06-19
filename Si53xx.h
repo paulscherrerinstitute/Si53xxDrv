@@ -140,7 +140,9 @@ namespace Si53xx {
 
 			typedef uint64_t ValType;
 
-			void readCSV(FILE *f = stdin);
+			virtual void readCSV(FILE *f = stdin);
+			virtual void readCSV(const char *f);
+			virtual void readCSV(const std::string &f);
 
 		private:
 			struct StrCmp {

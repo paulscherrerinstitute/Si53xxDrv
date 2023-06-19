@@ -7,28 +7,6 @@
 
 using namespace Si53xx;
 
-class feil {
-	private:
-		FILE *f;
-
-	public:
-		feil(const char *nm, const char *acc="r")
-		{
-			f = fopen(nm, acc);
-			if ( ! f ) {
-				throw std::runtime_error( std::string("Unable to open file ") + strerror(errno) );
-			}
-		}
-		~feil()
-		{
-			fclose(f);
-		}
-		FILE * operator*()
-		{
-			return f;
-		}
-};
-
 TstDrv::TstDrv()
 : page(0)
 {
@@ -92,7 +70,7 @@ main(int argc, char **argv)
 
 	Si5395 si;
 
-	si.readCSV( *feil(fnam) );
+	si.readCSV( fnam );
 
 	unsigned long long n = si.get( "N0_NUM" );
 	unsigned long long d = si.get( "N0_DEN" );
