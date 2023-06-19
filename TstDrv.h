@@ -5,7 +5,7 @@
 using namespace Si53xx;
 using std::vector;
 
-class TstDrv : public I2CDriver {
+class TstDrv : public I2cDriver {
 	private:
 		vector<Reg> regs;
 		int         page;

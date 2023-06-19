@@ -126,7 +126,7 @@ Si53xx::toAccess(const std::string &s)
 	throw std::invalid_argument("Si53xx::toAccess: unable to convert string to 'Access' type");
 }
 
-Si53xx::Si53xx::Si53xx(I2CDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
+Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
 : drv   ( drv   ),
   pageNo( -1    ),
   params( p     )
@@ -404,6 +404,8 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValT
 	set( s.update, 1   );
 }
 
+
+
 void
 Si53xx::Si53xx::setDivider(DividerSettings &s, double val)
 {
@@ -566,6 +568,53 @@ Si53xx::Si53xx::setMXAXBDivider(double  val)
 	setDivider( s, val );
 }
 
+/* multiply two 64bit numbers and detect overflow; does not have
+ * to be efficient; we use this rarely.
+ */
+static int mu64(uint64_t *p, uint64_t a, uint64_t b)
+{
+	// break into upper and lower parts; we'll compute the
+	// partial products
+	//   a = al + 2^M ah
+	//   b = bl + 2^M bh
+	// thus
+	//   a*b = al*bl + 2^M (al*bh + ah*bl) + 2^(2M) ah*bh
+	// if we chose M=32 (for uint64_t) then
+	//  -> overflow if ah*bh != 0
+	//  -> overflow if the al*bh or ah*bh >= 2^M
+	//  -> overflow if adding the partial products overflows
+	uint64_t al = a & 0xffffffff;
+	uint64_t bl = b & 0xffffffff;
+	uint64_t ah = (a >> 32) & 0xffffffff;
+	uint64_t bh = (b >> 32) & 0xffffffff;
+	uint64_t t;
+	uint64_t r;
+
+	if ( ah ) {
+		if ( bh ) {
+			// If both upper parts are nonzero then we have an overflow
+			return -1;
+		}
+		t = ah*bl;
+	} else {
+		t = al*bh;
+	}
+
+	// upper*lower must be < 1^32
+	if ( t & 0xfffffff0000000ULL ) {
+		return -1;
+	}
+	r = (t << 32);
+
+	t = al * bl + r;
+	if ( t < r ) {
+        // addition overflow
+		return -1;
+	}
+	*p = t;
+	return 0;
+}
+
 
 static void
 Si53xx::ratapp(double x, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp)
@@ -575,7 +624,7 @@ uint64_t n1 = 1;
 uint64_t d2 = 1;
 uint64_t d1 = 0;
 
-uint64_t n, d, a;
+uint64_t n, d, a, p;
 	
 	/* Keep computing convergents until we hit a max.
 	 * Compute 1/x actually (same result just with num/den switched);
@@ -584,15 +633,30 @@ uint64_t n, d, a;
 	while ( x != 0.0 ) {
 		x   = 1.0/x;
 		a   = (uint64_t)x;
-		/* Check against overflow */
-		if ( ( (double)a * (double)n1 + (double) n2 > (double) maxNum ) ) {
+
+		// compute n = a*n1 + n2
+
+		// try a * n1 checking for overflow
+		if ( mu64( &p, a, n1 ) ) {
 			break;
 		}
-		if ( ( (double)a * (double)d1 + (double) d2 > (double) maxDen ) ) {
+		if ( ( n = p + n2 ) < n2 ) {
+			// addition overflow
 			break;
 		}
-		n = a * n1 + n2;
-		d = a * d1 + d2;
+
+		// compute d = a*d1 + d2
+
+		// try a * d1 checking for overflow
+		if ( mu64( &p, a, d1 ) ) {
+			break;
+		}
+		if ( (d = p + d2) < d2 ) {
+			// addition overflow
+			break;
+		}
+
+		// check requested limits
 		if ( n > maxNum || d > maxDen ) {
 			break;
 		}

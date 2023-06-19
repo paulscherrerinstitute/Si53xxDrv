@@ -1,6 +1,9 @@
 
 #include "Si5395.h"
 
+#include "Si53xxI2c.h"
+#include "TstDrv.h"
+
 namespace Si53xx {
 	extern SettingVec Si5395Settings;
 };
@@ -12,7 +15,17 @@ static const Si53xxParams params = {
 	numOutputs:   10
 };
 
-Si5395::Si5395(I2CDriverShp drv)
+Si5395::Si5395(I2cDriverShp drv)
 : Si53xx(drv, Si5395Settings, ::params)
+{
+}
+
+Si5395::Si5395(const char *i2cDev, unsigned i2cAddr)
+: Si5395( std::make_shared<I2cDev>( i2cDev, i2cAddr ) )
+{
+}
+
+Si5395::Si5395()
+: Si5395( std::make_shared<TstDrv>() )
 {
 }

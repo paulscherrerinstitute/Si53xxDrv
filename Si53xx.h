@@ -119,13 +119,13 @@ namespace Si53xx {
 			}
 	};
 
-	class I2CDriver {
+	class I2cDriver {
 		public:
 			virtual void rd (uint8_t offset, unsigned n, uint8_t *buf) = 0;
 			virtual void wr (uint8_t offset, unsigned n, uint8_t *buf) = 0;
 	};
 
-	typedef shared_ptr<I2CDriver> I2CDriverShp;
+	typedef shared_ptr<I2cDriver> I2cDriverShp;
 
 	class Si53xx;
 
@@ -136,7 +136,7 @@ namespace Si53xx {
 
 	class Si53xx {
 		public:
-			Si53xx(I2CDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
+			Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
 
 			typedef uint64_t ValType;
 
@@ -155,7 +155,7 @@ namespace Si53xx {
 			Si53xxParams  params;
 			vector<Reg>   regs;
 			Settings      settings;
-			I2CDriverShp  drv;
+			I2cDriverShp  drv;
 			int           pageNo;
 
 		private:
