@@ -151,9 +151,12 @@ Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53x
 		}
 	}
 
-	for (auto it = this->settings.begin(); it != this->settings.end(); ++it ){
-		auto kv = *it;
-		printf("in map %p: %s\n", kv.first, kv.first);
+	if ( 0 ) {
+		// debugging
+		for (auto it = this->settings.begin(); it != this->settings.end(); ++it ){
+			auto kv = *it;
+			printf("in map %p: %s\n", kv.first, kv.first);
+		}
 	}
 }
 
