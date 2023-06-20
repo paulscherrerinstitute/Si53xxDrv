@@ -13,7 +13,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
     cdef cppclass Si5395:
       ctypedef uint64_t ValType;
       Si5395() except+
-      Si5395(const char *) except+
+      Si5395(const char *, unsigned) except+
       ValType  get(const string &)            except+
       void     set(const string &, ValType v) except+
       void     readCSV(const char *)          except+
@@ -35,8 +35,11 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 cdef class SI5395:
     cdef Si5395 c_cls
 
-    def __init__(self):
-      self.c_cls = Si5395()
+    def __init__(self, busn=None, i2cAddr=0x68):
+      if ( not busn is None ):
+        self.c_cls = Si5395( busn, i2cAddr )
+      else:
+        self.c_cls = Si5395()
 
     def get(self, key):
       v = self.c_cls.get( key )
