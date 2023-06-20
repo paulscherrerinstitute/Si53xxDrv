@@ -10,6 +10,7 @@ namespace Si53xx {
 		private:
 			unsigned addr;
 			int      fd;
+			int      pg;
 
 			I2cDev(const I2cDev&)             = delete;
 			I2cDev & operator=(const I2cDev&) = delete;
@@ -20,7 +21,6 @@ namespace Si53xx {
 			virtual void rd(uint8_t off, unsigned n, uint8_t *buf);
 			virtual void wr(uint8_t off, unsigned n, uint8_t *buf);
 
-			virtual void rdwr(bool doRead, uint8_t off, unsigned n, uint8_t *buf);
 	};
 };
 
