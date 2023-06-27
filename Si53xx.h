@@ -134,6 +134,8 @@ namespace Si53xx {
 		unsigned        numOutputs;
 	};
 
+	enum class OutputConfig { OFF, LVDS18, LVDS25, LVDS33 };
+
 	class Si53xx {
 		public:
 			Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
@@ -143,6 +145,10 @@ namespace Si53xx {
 			virtual void readCSV(FILE *f = stdin);
 			virtual void readCSV(const char *f);
 			virtual void readCSV(const std::string &f);
+
+			virtual void dumpCSV(const char *f);
+			virtual void dumpCSV(const std::string &f);
+			virtual void dumpCSV(FILE *f = stdout);
 
 		private:
 			struct StrCmp {
@@ -225,6 +231,9 @@ namespace Si53xx {
 
 			virtual void     sendPreamble();
 			virtual void     sendPostamble();
+
+			// enable/disable 
+			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider);
 	};
 
 	/* Rational approximation of a floating-point number */

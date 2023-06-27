@@ -397,6 +397,29 @@ int      idx  = 0;
 }
 
 void
+Si53xx::Si53xx::dumpCSV(const std::string &f)
+{
+	this->dumpCSV( f.c_str() );
+}
+
+
+void
+Si53xx::Si53xx::dumpCSV(const char *f)
+{
+	this->dumpCSV( *RAIIfeil( f ) );
+}
+
+void
+Si53xx::Si53xx::dumpCSV(FILE *f)
+{
+uint8_t buf[4096];
+	this->readRegs(0, sizeof(buf), buf);
+	for ( int i = 0; i < sizeof(buf); i++ ) {
+		fprintf(f, "0x%04x, 0x%02x\n", i, buf[i]);
+	}	
+}
+
+void
 Si53xx::Si53xx::getDivider(DividerSettings &s, Si53xx::ValType *nump, Si53xx::ValType *denp)
 {
 	*nump = get( s.num );
@@ -732,4 +755,30 @@ Si53xx::SettingShp
 Si53xx::Si53xx::at(const char *ch)
 {
 	return settings.at( ch );
+}
+
+void
+Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider)
+{
+	if ( alt && (idx != 0 && idx != 9) ) {
+		throw std::invalid_argument("Si53xx::setOutput: 'A' selection only valid for outputs 0 and 9");
+	}
+
+	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
+
+	set( *FMT( "%sSYNC_EN",   &pre ), 1 );
+	set( *FMT( "%sDIS_STATE", &pre ), 0 );
+	set( *FMT( "%sDIS_STATE", &pre ), 0 );
+
+	switch ( drvCfg ) {
+		case OutputConfig::LVDS18:
+		case OutputConfig::LVDS25:
+		case OutputConfig::LVDS33:
+			set( *FMT( "%sFORMAT",  *pre ), 1 );
+			break;
+		default:
+			break;
+		// case LVCMOS18, LVCMOS25, LVCMOS33: handle here
+	}
+
 }
