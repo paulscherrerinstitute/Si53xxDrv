@@ -23,7 +23,10 @@ TstDrv::wr(uint8_t off, unsigned n, uint8_t *buf)
 			this->page = *buf;
 		} else {
 			unsigned a = (this->page << 8) | off;
-			fprintf(stdout, "0x%04X,0x%02X\n", a, *buf);
+			if ( 0 ) {
+				// debugging
+				fprintf(stdout, "0x%04X,0x%02X\n", a, *buf);
+			}
 			this->regs[a].update( *buf );
 		}
 		off++;
@@ -55,29 +58,4 @@ TstDrv::printRegs(FILE *f)
 			fprintf(f, "0x%04X,0x%02x\n", a, v);
 		}
 	}
-}
-
-int
-main(int argc, char **argv)
-{
-	const char *fnam = "CLKB-Freerun-142.857MHz.txt";
-
-	while ( int opt = getopt(argc, argv, "f:") > 0 ) {
-		switch ( opt ) {
-			case 'f': fnam = optarg; break;
-		}
-	}
-
-	Si5395 si;
-
-	si.readCSV( fnam );
-
-	unsigned long long n = si.get( "N0_NUM" );
-	unsigned long long d = si.get( "N0_DEN" );
-
-	printf("N0: %llu/%llu  = 0x%llx/0x%llx = %lg\n", n, d, n, d, (double)n/(double)d);
-
-	si.set( "N0_NUM", 256 );
-
-//	drv->printRegs();
 }

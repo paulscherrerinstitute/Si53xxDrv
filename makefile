@@ -4,11 +4,12 @@ CXXFLAGS=-g -fpic
 SRCS=Si53xx.cc Si5395Settings.cc Si5395.cc pysi5395.cc TstDrv.cc Si53xxI2c.cc
 
 OBJS=$(SRCS:%.cc=%.o)
-TGTS=$(addprefix $(ODIR),pysi5395.so tst)
+PROGS=$(addprefix $(ODIR), Tst CsvDiff)
+TGTS=$(addprefix $(ODIR),pysi5395.so) $(PROGS)
 
 all: $(TGTS)
 
-$(ODIR)tst: $(addprefix $(ODIR),TstDrv.o Si53xx.o Si5395Settings.o Si5395.o Si53xxI2c.o)
+$(PROGS):%:%.o $(addprefix $(ODIR),TstDrv.o Si53xx.o Si5395Settings.o Si5395.o Si53xxI2c.o)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 pysi5395_CXXFLAGS=-I/usr/include/python3.10

@@ -187,13 +187,18 @@ namespace Si53xx {
 			virtual bool    isPllOff();
 
 			struct DividerSettings {
+				string     prefix;
+				int        idx;
 				SettingShp num;
 				SettingShp den;
 				SettingShp update;
+				SettingShp fracEn;
+				SettingShp fracClkDis;
+				SettingShp pibp;
 				bool       requirePllOff;
 			};
 
-			virtual DividerSettings getDividerSettings (const char *prefix);
+			virtual DividerSettings getDividerSettings (const char *prefix, int idx = -1);
 			virtual DividerSettings getNDividerSettings(unsigned idx);
 			virtual DividerSettings getMDividerSettings();
 			virtual DividerSettings getPDividerSettings(unsigned idx);
@@ -234,12 +239,23 @@ namespace Si53xx {
 			virtual void     setMXAXBDivider(ValType num, ValType den);
 			virtual void     setMXAXBDivider(double  val);
 
+			// R-divider value must be even > 0;
+			// set 'alt' for R0A/R9A.
+			virtual void     setRDivider(unsigned idx, bool alt, unsigned val);
+			virtual unsigned getRDivider(unsigned idx, bool alt);
+
 			virtual void     sendPreamble();
 			virtual void     sendPostamble();
 
 			// enable/disable 
 			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider);
 
+			virtual void     showDiff(Si53xx *other, const char *fn);
+			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
+
+			// -1 disables ZDM
+			virtual void     setZDM(int input);
+			virtual int      getZDM();
 	};
 
 	/* Rational approximation of a floating-point number */

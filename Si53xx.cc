@@ -452,6 +452,28 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValT
 	}
 	set( s.num,    num );
 	set( s.den,    den );
+	if ( s.pibp ) {
+		// always use fractional mode for N
+		ValType v = get( s.pibp ) & ~ (1<<s.idx);
+		set( s.pibp, v );
+	}
+	if ( s.fracEn ) {
+		set( s.fracEn, ( den > 1 ? 1 : 0 ) );
+	}
+	if ( s.fracClkDis ) {
+		ValType v;
+		if ( s.idx >= 0 ) {
+			v = get( s.fracClkDis );
+			if ( den > 1 ) {
+				v &= ~ (1 << s.idx);
+			} else {
+				v |=   (1 << s.idx);
+			}
+		} else {
+			v = ( den > 1 ? 0 : 1 );
+		}
+		set( s.fracClkDis, v );
+	}
 	set( s.update, 1   );
 }
 
@@ -473,20 +495,32 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, double val)
 }
 
 Si53xx::Si53xx::DividerSettings
-Si53xx::Si53xx::getDividerSettings(const char *prefix)
+Si53xx::Si53xx::getDividerSettings(const char *prefix, int idx)
 {
 	DividerSettings s;
+	s.prefix        = prefix;
+	s.idx           = idx;
 	s.num           = this->at( *FMT( "%s_NUM",    prefix ) );
 	s.den           = this->at( *FMT( "%s_DEN",    prefix ) );
 	s.update        = this->at( *FMT( "%s_UPDATE", prefix ) );
 	s.requirePllOff = (prefix[0] != 'N');
+	if ( 'P' == prefix[0] || 0 == strcmp(prefix, "M") ) {
+		s.fracEn     = this->at( *FMT( "%s_FRAC_EN", prefix ) );
+		if ( 'P' == prefix[0] ) {
+			s.fracClkDis = this->at( "PDIV_FRACN_CLK_DIS" );
+		} else {
+			s.fracClkDis = this->at( "FRACN_CLK_DIS_PLL" );
+		}
+	} else if ( 'N' == prefix[0] ) {
+		s.pibp   = this->at( *FMT( "%s_PIYP", prefix ) );
+	}
 	return s;
 }
 
 Si53xx::Si53xx::DividerSettings
 Si53xx::Si53xx::getNDividerSettings(unsigned idx)
 {
-	return getDividerSettings( *FMT( "N%d", idx ) );
+	return getDividerSettings( *FMT( "N%d", idx ), idx );
 }
 
 Si53xx::Si53xx::DividerSettings
@@ -498,7 +532,7 @@ Si53xx::Si53xx::getMDividerSettings()
 Si53xx::Si53xx::DividerSettings
 Si53xx::Si53xx::getPDividerSettings(unsigned idx)
 {
-	return getDividerSettings( *FMT( "P%d", idx ) );
+	return getDividerSettings( *FMT( "P%d", idx ), idx );
 }
 
 Si53xx::Si53xx::DividerSettings
@@ -767,13 +801,17 @@ Si53xx::Si53xx::at(const char *ch)
 	return settings.at( ch );
 }
 
+static void chkAlt(unsigned idx, bool alt, const std::string pre)
+{
+	if ( alt && (idx != 0) && (idx != 9) ) {
+		throw std::invalid_argument(pre + ": 'A' selection only valid for outputs 0 and 9");
+	}
+}
+
 void
 Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider)
 {
-	if ( alt && (idx != 0 && idx != 9) ) {
-		throw std::invalid_argument("Si53xx::setOutput: 'A' selection only valid for outputs 0 and 9");
-	}
-
+	chkAlt( idx, alt, "Si53xx::SetOutput" );
 	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
 
 	set( *FMT( "%sSYNC_EN",   &pre ), 1 );
@@ -790,4 +828,81 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned 
 			break;
 		// case LVCMOS18, LVCMOS25, LVCMOS33: handle here
 	}
+}
+			
+void
+Si53xx::Si53xx::showDiff(Si53xx *other, const char *fn)
+{
+	if ( fn ) {
+		this->showDiff( other, *RAIIfeil( fn, "w+" ) );
+	} else {
+		this->showDiff( other );
+	}
+}
+
+void
+Si53xx::Si53xx::showDiff(Si53xx *other, FILE *f)
+{
+Settings::iterator it  = this->settings.begin();
+Settings::iterator ite = this->settings.end();
+	while ( it != ite ) {
+		const char *k( (*it).first );
+		ValType     vMine;
+		try {
+			vMine = this->get( k );
+		} catch ( std::runtime_error &e ) {
+			// skip unininitialized/untouched regs when using the
+			// dummy driver...
+			++it;
+			continue;
+		}
+		ValType     vOthr = other->get( k );
+		if ( vMine != vOthr ) {
+			fprintf(f, "%40s: 0x%lx => 0x%lx\n", k, vOthr, vMine);
+		}
+		++it;
+	}
+}
+
+void
+Si53xx::Si53xx::setZDM(int inp)
+{
+	this->set( "ZDM_EN", ( inp < 0 ? 0 : 1 ) );
+	if ( inp >= 0 ) {
+		this->set( "ZDM_IN_SEL", inp );
+	}
+}
+
+int
+Si53xx::Si53xx::getZDM()
+{
+	if ( 0 == this->get( "ZDM_EN" ) ) {
+		return -1;
+	}
+	return this->get( "ZDM_IN_SEL" );
+}
+
+unsigned
+Si53xx::Si53xx::getRDivider(unsigned idx, bool alt)
+{
+	chkAlt(idx, alt, "Si53xx::getRDivider");
+	if ( this->get( *FMT( "OUT%u%s_RDIV_FORCE2", idx, (alt ? "A" : "") ) ) ) {
+		return 2;
+	}
+	return (this->get( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ) ) + 1) << 1;
+}
+
+void
+Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
+{
+	chkAlt(idx, alt, "Si53xx::setRDivider");
+	if ( 0 == val || (val & 1) ) {
+		throw std::out_of_range("Si53xx::setRDivider: R divider must be even >= 2" );
+	}
+	this->set( *FMT( "OUT%u%s_RDIV_FORCE2", idx, (alt ? "A" : "") ), (2 == val ? 1 : 0 ) );
+
+	if ( 2 != val ) {
+		val = (val >> 1) - 1;
+	}
+	this->set( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ), val );
 }
