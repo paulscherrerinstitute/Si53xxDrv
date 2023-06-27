@@ -406,7 +406,7 @@ Si53xx::Si53xx::dumpCSV(const std::string &f)
 void
 Si53xx::Si53xx::dumpCSV(const char *f)
 {
-	this->dumpCSV( *RAIIfeil( f ) );
+	this->dumpCSV( *RAIIfeil( f, "w+" ) );
 }
 
 void
@@ -415,7 +415,9 @@ Si53xx::Si53xx::dumpCSV(FILE *f)
 uint8_t buf[4096];
 	this->readRegs(0, sizeof(buf), buf);
 	for ( int i = 0; i < sizeof(buf); i++ ) {
-		fprintf(f, "0x%04x, 0x%02x\n", i, buf[i]);
+		if ( fprintf(f, "0x%04x, 0x%02x\n", i, buf[i]) < 0 ) {
+			throw std::runtime_error("Si53xx::dumpCSV(): file write error");
+		}
 	}	
 }
 
