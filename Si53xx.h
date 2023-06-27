@@ -192,9 +192,6 @@ namespace Si53xx {
 				SettingShp num;
 				SettingShp den;
 				SettingShp update;
-				SettingShp fracEn;
-				SettingShp fracClkDis;
-				SettingShp pibp;
 				bool       requirePllOff;
 			};
 
@@ -212,6 +209,8 @@ namespace Si53xx {
 		public:
 			virtual ValType get(const std::string &k);
 			virtual void    set(const std::string &k, ValType v);
+			virtual void    ormsk (const std::string &k, ValType m);
+			virtual void    andmsk(const std::string &k, ValType m);
 
 			virtual SettingShp at(const std::string &k);
 			virtual SettingShp at(const char        *k);
@@ -254,8 +253,10 @@ namespace Si53xx {
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
 
 			// -1 disables ZDM
-			virtual void     setZDM(int input);
-			virtual int      getZDM();
+			virtual void     setZDM(bool enabled);
+			virtual bool     getZDM();
+
+			virtual void     selInput(int inp);
 	};
 
 	/* Rational approximation of a floating-point number */

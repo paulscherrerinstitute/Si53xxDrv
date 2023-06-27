@@ -2,20 +2,31 @@
 # ^^^^^^ DO NOT REMOVE THE ABOVE LINE ^^^^^^^
 
 from libcpp.string cimport *
+from libcpp        cimport bool
 from libc.stdint   cimport *
 from libc.stdio    cimport *
+from enum          import Enum
 
 cdef extern from "Si5395.h" namespace "Si53xx":
+
+  cdef cppclass MOutputConfig "Si53xx::OutputConfig":
+    pass
+
+  cdef const MOutputConfig off    "Si53xx::OutputConfig::OFF"
+  cdef const MOutputConfig lvds18 "Si53xx::OutputConfig::LVDS18"
+  cdef const MOutputConfig lvds25 "Si53xx::OutputConfig::LVDS25"
+  cdef const MOutputConfig lvds33 "Si53xx::OutputConfig::LVDS33"
+
   cdef cppclass Si53xx:
-    get(const string &) except +
+    ctypedef uint64_t ValType
+    ValType  get(const string &) except +
+    void     set(const string &, ValType v) except+
 
   cdef extern from "Si5395.h":
-    cdef cppclass Si5395:
-      ctypedef uint64_t ValType;
+    cdef cppclass Si5395(Si53xx):
+
       Si5395() except+
       Si5395(const char *, unsigned) except+
-      ValType  get(const string &)            except+
-      void     set(const string &, ValType v) except+
       void     readCSV(const char *)          except+
       void     dumpCSV(const char *)          except+
       void     getNDivider(unsigned idx, ValType *num, ValType *den) except+
@@ -23,6 +34,8 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 
       void     getPDivider(unsigned idx, ValType *num, ValType *den) except+
       void     setPDivider(unsigned idx, ValType num, ValType den) except+
+      unsigned getRDivider(unsigned idx, bool alt) except+
+      void     setRDivider(unsigned idx, bool alt, ValType num) except+
 
       void     getMDivider( ValType *num, ValType *den) except+
       void     setMDivider(ValType num, ValType den) except+
@@ -32,6 +45,20 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 
       void     sendPreamble() except+
       void     sendPostamble() except+
+
+      void     setZDM(bool) except+
+      bool     getZDM() except+
+
+      void     selInput(int) except+
+
+      void     setOutput(unsigned, bool, MOutputConfig, unsigned) except+
+
+cpdef enum OutputConfig:
+  OFF    = <int>off
+  LVDS18 = <int>lvds18
+  LVDS25 = <int>lvds25
+  LVDS33 = <int>lvds33
+
 
 cdef class SI5395:
     cdef Si5395 c_cls
@@ -84,6 +111,12 @@ cdef class SI5395:
       self.c_cls.getMDivider(&n, &d)
       return n,d
 
+    def getRDivider(self, idx, alt):
+      return self.c_cls.getRDivider(idx, alt)
+
+    def setRDivider(self, idx, alt, val):
+      self.c_cls.setRDivider(idx, alt, val)
+
     def setMDivider(self, num, den):
       self.c_cls.setMDivider(num, den)
 
@@ -92,3 +125,15 @@ cdef class SI5395:
 
     def sendPostamble(self):
       self.c_cls.sendPostamble()
+
+    def setOutput(self, idx, alt, OutputConfig cfg, nDivider):
+      self.c_cls.setOutput( idx, alt, <MOutputConfig>cfg, nDivider )
+
+    def selInput(self, inp):
+      self.c_cls.selInput( inp )
+
+    def setZDM(self, val):
+      self.c_cls.setZDM( val )
+
+    def getZDM(self):
+      return self.c_cls.getZDM()

@@ -31,6 +31,18 @@ class FMT {
 			}
 		}
 
+		FMT(const std::string &fmt, ...)
+		{
+			va_list ap;
+			va_start(ap, fmt);
+			int st = vsnprintf(this->buf, sizeof(this->buf), fmt.c_str(), ap);
+			va_end(ap);
+			if ( st >= sizeof(this->buf) ) {
+				throw std::range_error("FMT buffer not big enough");
+			}
+		}
+
+
 		FMT(const FMT &orig)
 		{
 			strcpy(this->buf, orig.buf);
@@ -452,32 +464,32 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValT
 	}
 	set( s.num,    num );
 	set( s.den,    den );
-	if ( s.pibp ) {
-		// always use fractional mode for N
-		ValType v = get( s.pibp ) & ~ (1<<s.idx);
-		set( s.pibp, v );
-	}
-	if ( s.fracEn ) {
-		set( s.fracEn, ( den > 1 ? 1 : 0 ) );
-	}
-	if ( s.fracClkDis ) {
-		ValType v;
-		if ( s.idx >= 0 ) {
-			v = get( s.fracClkDis );
+
+	if ( 'P' == s.prefix[0] || 0 == strcmp(s.prefix.c_str(), "M") ) {
+		this->set( *FMT( s.prefix + "_FRACN_EN"), (den > 1 ? 1 : 0 ) );
+		if ( 'P' == s.prefix[0] ) {
 			if ( den > 1 ) {
-				v &= ~ (1 << s.idx);
+				this->andmsk( "PDIV_FRACN_CLK_DIS", ~ ( 1 << s.idx ) );
 			} else {
-				v |=   (1 << s.idx);
+				this->ormsk ( "PDIV_FRACN_CLK_DIS",   ( 1 << s.idx ) );
 			}
 		} else {
-			v = ( den > 1 ? 0 : 1 );
+			this->set( "FRACN_CLK_DIS_PLL", ( den > 1 ? 0 : 1 ) );
 		}
-		set( s.fracClkDis, v );
 	}
+
+	if ( 'N' == s.prefix[0] ) {
+		ValType m = (1 << s.idx);
+
+		// always use fractional mode for N
+		this->andmsk( "N_PIBYP",          ~ m );
+		this->ormsk ( "N_CLK_TO_OUTX_EN",   m );
+		this->ormsk ( "N_PDNB",             m );
+		this->andmsk( "N_CLK_DIS",        ~ m );
+	}
+
 	set( s.update, 1   );
 }
-
-
 
 void
 Si53xx::Si53xx::setDivider(DividerSettings &s, double val)
@@ -498,29 +510,19 @@ Si53xx::Si53xx::DividerSettings
 Si53xx::Si53xx::getDividerSettings(const char *prefix, int idx)
 {
 	DividerSettings s;
-	s.prefix        = prefix;
+	s.prefix        = (idx >= 0 ? *FMT( "%s%d", prefix, idx ) : prefix);
 	s.idx           = idx;
-	s.num           = this->at( *FMT( "%s_NUM",    prefix ) );
-	s.den           = this->at( *FMT( "%s_DEN",    prefix ) );
-	s.update        = this->at( *FMT( "%s_UPDATE", prefix ) );
-	s.requirePllOff = (prefix[0] != 'N');
-	if ( 'P' == prefix[0] || 0 == strcmp(prefix, "M") ) {
-		s.fracEn     = this->at( *FMT( "%s_FRAC_EN", prefix ) );
-		if ( 'P' == prefix[0] ) {
-			s.fracClkDis = this->at( "PDIV_FRACN_CLK_DIS" );
-		} else {
-			s.fracClkDis = this->at( "FRACN_CLK_DIS_PLL" );
-		}
-	} else if ( 'N' == prefix[0] ) {
-		s.pibp   = this->at( *FMT( "%s_PIYP", prefix ) );
-	}
+	s.num           = this->at( *FMT( s.prefix + "_NUM"   ) );
+	s.den           = this->at( *FMT( s.prefix + "_DEN"   ) );
+	s.update        = this->at( *FMT( s.prefix + "_UPDATE") );
+	s.requirePllOff = (s.prefix[0] != 'N');
 	return s;
 }
 
 Si53xx::Si53xx::DividerSettings
 Si53xx::Si53xx::getNDividerSettings(unsigned idx)
 {
-	return getDividerSettings( *FMT( "N%d", idx ), idx );
+	return getDividerSettings( "N", idx );
 }
 
 Si53xx::Si53xx::DividerSettings
@@ -532,7 +534,7 @@ Si53xx::Si53xx::getMDividerSettings()
 Si53xx::Si53xx::DividerSettings
 Si53xx::Si53xx::getPDividerSettings(unsigned idx)
 {
-	return getDividerSettings( *FMT( "P%d", idx ), idx );
+	return getDividerSettings( "P", idx );
 }
 
 Si53xx::Si53xx::DividerSettings
@@ -792,7 +794,11 @@ Si53xx::Si53xx::isPllOff()
 Si53xx::SettingShp
 Si53xx::Si53xx::at(const string &k)
 {
-	return settings.at( k.c_str() );
+	try {
+		return settings.at( k.c_str() );
+	} catch ( std::exception &e ) {
+		throw std::runtime_error("Si53xx::at(): key '" + k + "' not found");
+	}
 }
 
 Si53xx::SettingShp
@@ -814,19 +820,32 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned 
 	chkAlt( idx, alt, "Si53xx::SetOutput" );
 	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
 
-	set( *FMT( "%sSYNC_EN",   &pre ), 1 );
-	set( *FMT( "%sDIS_STATE", &pre ), 0 );
-	set( *FMT( "%sDIS_STATE", &pre ), 0 );
+	set( *FMT( "%sSYNC_EN",   *pre ), 1 );
 
+	ValType vsel = 0;
 	switch ( drvCfg ) {
-		case OutputConfig::LVDS18:
-		case OutputConfig::LVDS25:
+		case OutputConfig::LVDS25: vsel++; // fall through
+		case OutputConfig::LVDS18: vsel++; // fall through
 		case OutputConfig::LVDS33:
 			set( *FMT( "%sFORMAT",  *pre ), 1 );
 			break;
 		default:
 			break;
 		// case LVCMOS18, LVCMOS25, LVCMOS33: handle here
+	}
+
+	set( *FMT( "%sVDD_SEL_EN",   *pre ), 1    );
+	set( *FMT( "%sVDD_SEL",      *pre ), vsel );
+
+	ValType outEn = ( OutputConfig::OFF != drvCfg );
+
+	set( *FMT( "%sOE",       *pre ),   outEn );
+	set( *FMT( "%sPDN",      *pre ), ! outEn );
+
+	set( *FMT( "%sMUX_SEL", *pre ), nDivider ); 
+
+	if ( 0 == get( *FMT( "R%d%s_REG", idx, (alt ? "A" : "") ) ) ) {
+		this->setRDivider( idx, alt, 2 );
 	}
 }
 			
@@ -865,21 +884,42 @@ Settings::iterator ite = this->settings.end();
 }
 
 void
-Si53xx::Si53xx::setZDM(int inp)
+Si53xx::Si53xx::selInput(int inp)
 {
-	this->set( "ZDM_EN", ( inp < 0 ? 0 : 1 ) );
-	if ( inp >= 0 ) {
+	ValType v = (1 << inp);
+	this->set( "IN_SEL_REGCTRL", 1 );
+	this->ormsk( "IN_EN",                 v );
+	this->ormsk( "INX_TO_PFD_EN",         v );
+	// CBP sets this
+	this->ormsk( "IN_CLK_VAL_PWR_UP_DIS", v );
+	this->set( "IN_SEL", inp );
+	if ( inp != 3 ) {
 		this->set( "ZDM_IN_SEL", inp );
 	}
 }
 
-int
+void
+Si53xx::Si53xx::setZDM(bool ena)
+{
+	this->set( "ZDM_EN", (ena ? 1 : 0 ) );
+
+	if ( ena ) {
+		ValType v = ( 1 << 3 );
+		this->ormsk( "IN_EN",                 v );
+		// CBP sets this
+		this->ormsk( "IN_CLK_VAL_PWR_UP_DIS", v );
+		this->ormsk( "INX_TO_PFD_EN",         v );
+	}
+
+	// assume out9a; aka #11
+	ValType outx = ( ena ? (1<<11) : 0 );
+	this->set( "OUTX_ALWAYS_ON", outx );
+}
+
+bool
 Si53xx::Si53xx::getZDM()
 {
-	if ( 0 == this->get( "ZDM_EN" ) ) {
-		return -1;
-	}
-	return this->get( "ZDM_IN_SEL" );
+	return this->get( "ZDM_EN" );
 }
 
 unsigned
@@ -893,6 +933,20 @@ Si53xx::Si53xx::getRDivider(unsigned idx, bool alt)
 }
 
 void
+Si53xx::Si53xx::ormsk (const std::string &k, ValType m)
+{
+	SettingShp s = this->at( k );
+	set( s, get( s ) | m );
+}
+
+void
+Si53xx::Si53xx::andmsk(const std::string &k, ValType m)
+{
+	SettingShp s = this->at( k );
+	set( s, get( s ) & m );
+}
+
+void
 Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
 {
 	chkAlt(idx, alt, "Si53xx::setRDivider");
@@ -903,6 +957,6 @@ Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
 
 	if ( 2 != val ) {
 		val = (val >> 1) - 1;
+		this->set( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ), val );
 	}
-	this->set( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ), val );
 }
