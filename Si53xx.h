@@ -62,6 +62,7 @@ namespace Si53xx {
 
 		public:
 			Setting(const Key &k, const char *name, const string & access, unsigned left, unsigned right, const RegAddrVec addrs);
+			Setting(const Key &k, const char *name, Access access, unsigned left, unsigned right, const RegAddrVec addrs);
 
 		private:
 			string         name;
@@ -112,6 +113,10 @@ namespace Si53xx {
 			isContiguous() const
 			{
 				return cont;
+			}
+			static SettingShp mkSetting(const char *name, Access access, unsigned left, unsigned right, const RegAddrVec addrs)
+			{
+				return std::make_shared<Setting>(Key(), name, access, left, right, addrs);
 			}
 			static SettingShp mkSetting(const char *name, const string & access, unsigned left, unsigned right, const RegAddrVec addrs)
 			{
@@ -234,6 +239,7 @@ namespace Si53xx {
 
 			// enable/disable 
 			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider);
+
 	};
 
 	/* Rational approximation of a floating-point number */

@@ -33,6 +33,13 @@ TstDrv.h: Si5395.h
 
 Si5395.o: Si5395.h
 
+Si5395Settings.cc: si5395_reg_extract
+	$(RM) $@
+	./$^ > $@
+
+./si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.c
+	cat $^ | $(CC) -o $@ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -xc -
+
 
 .PHONY: clean
 

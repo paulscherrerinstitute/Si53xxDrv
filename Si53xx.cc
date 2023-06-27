@@ -78,14 +78,18 @@ Reg::addUser(const Setting *s)
 	}
 }
 
-
 Setting::Setting(const Key &k, const char *name, const string &access, unsigned left, unsigned right, const RegAddrVec addrs)
-: name      (name  ),
-  access    (toAccess( access )),
-  left      (left  ),
-  right     (right ),
-  addrs     (addrs ),
-  cont      (true  )
+: Setting( k, name, toAccess( access ), left, right, addrs )
+{
+}
+
+Setting::Setting(const Key &k, const char *name, Access access, unsigned left, unsigned right, const RegAddrVec addrs)
+: name      ( name   ),
+  access    ( access ),
+  left      ( left   ),
+  right     ( right  ),
+  addrs     ( addrs  ),
+  cont      ( true   )
 {
 
 	if ( right > 7 ) {
@@ -406,7 +410,11 @@ Si53xx::Si53xx::dumpCSV(const std::string &f)
 void
 Si53xx::Si53xx::dumpCSV(const char *f)
 {
-	this->dumpCSV( *RAIIfeil( f, "w+" ) );
+	if ( f ) {
+		this->dumpCSV( *RAIIfeil( f, "w+" ) );
+	} else {
+		this->dumpCSV();
+	}
 }
 
 void
@@ -782,5 +790,4 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned 
 			break;
 		// case LVCMOS18, LVCMOS25, LVCMOS33: handle here
 	}
-
 }
