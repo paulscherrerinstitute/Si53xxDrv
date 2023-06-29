@@ -1,0 +1,81 @@
+Skyworks would not release a method for computing
+the PLL bandwidth settings; not even the VCO and
+PFD operating ranges are available!
+
+We can - in principle nail down an acceptable loop (M, fpfd)
+and vary the P and N dividers to generate what we want.
+The assumption is that the loop dynamics would not change
+under these circumstances.
+
+A few tests: configure with CBPro for ZDM mode and vary the
+input frequency; see what the other parameters are:
+
+Fin            ,Fvco           ,Fpfd           ,M    ,N   ,P   ,MXAXB                    ,BW Parameters          ,Actual BW      ,Fast BW Parms          ,Actual Fast BW
+14.1865 MHz    ,13.33531 GHz   ,1.7733125 MHz  ,1504 ,470 ,8   , 277 + 3931/4800         , 16, 31, 12, 11, 63, 63,78.070 Hz      , 19, 39,  9,  8, 63, 63,625.186 Hz
+80 MHz         ,13.28 GHz      ,2 MHz          ,1328 ,83  ,40  , 276 + 2/3               , 16, 31, 12, 11, 63, 63,91.335 Hz      , 19, 39,  9,  8, 63, 63,731.435 Hz
+100 MHz        ,13.6 GHz       ,2 MHz          ,1360 ,68  ,50  , 283 + 1/3               , 16, 31, 12, 11, 63, 63,88.064 Hz      , 19, 39,  9,  8, 63, 63,705.217 Hz
+141.865 MHz    ,13.33531 GHz   ,1.891533... MHz,1410 ,47  ,75  , 277 + 3931/4800         , 16, 31, 12, 11, 63, 63,84.586 Hz      , 19, 39,  9,  8, 63, 63,677.373 Hz
+186.7 MHz      ,    13.44240GHz,     1.96526MHz,1368 ,36  ,95  ,      280.05000          , 16, 31, 12, 11, 63, 63,87.680 Hz      , 19, 39,  9,  8, 63, 63,702.152 Hz
+200 MHz        ,    13.60000GHz,     2.00000MHz,1360 ,34  ,100 ,      283.33333          , 16, 31, 12, 11, 63, 63,88.064 Hz      , 19, 39,  9,  8, 63, 63,705.217 Hz
+
+
+So in fact, the fpfd and fvco can be varied between 1.7..2MHz and 13.28..13.6GHz,
+respectively w/o changing the bandwidth parameters!
+
+OOF Findings
+------------
+
+OOF2_DIV_SEL defines a divider for a clock that is generated from
+a reference (OOF_REF_SEL)
+
+  oof_detector_freq = oof_ref / 2**(OOFx_DIV_SEL)
+
+The valid target frequency (which is being monitored) is
+communicated via OOFx_RATIO_REF:
+
+  OOFx_RATIO_REF = 2**24 * f_in / 2**(OOFy_DIV_SEL) / oof_detector_freq
+
+The OOF SET and CLR thresholds seem to be in 1/16 ppm steps
+  OOFx_TRG_THR_EXT: 0..15 fine steps (1/16ppm)
+  OFFx_TRG_THR
+
+  OOFx_DETWIN_SEL      => undocumented; set to 5, unchanged from 14MHz..200MHz fin
+  FAST_OOFx_DETWIN_SEL => undocumented; set to 1, unchanged from 14MHz..200MHz fin
+  
+Holdover
+---------
+
+HOLD_15M_CYC_COUNT: from the above tests it seems
+
+    fpfd * HOLD_15M_CYC_COUNT ~= 100 * 2**24
+
+which has the dimension of 1/T; and it would yield
+
+    HOLD_15M_CYC_COUNT        ~= 2**24 / (time [seconds] * f_pfd )
+
+with CBPro having used 10.06ms consistently over the tested examples.
+FWIW - 10m is also the 'LOS validation time' - but that is not
+changeable; so we can't test our hypothesis :-(
+
+    HOLD_SETTLE_TARGET seem to vary with fvco
+
+    OUT_MAX_LIMIT_LMT  seems to vary with fvco
+
+    OUT_MAX_LIMIT_LMT  = fvco [MHz]/0.7324384635355068
+    HOLD_SETTLE_TARGET = fvco [MHZ]/17.89784753839401
+
+    LOL_CLR_DELAY_DIV256 stays close to 25000
+      - if Fpfd varies, value varies
+      - if Fvco varies, value varies
+      - for Fin 100Mhz, 200Mhz Fvco and Fpfd are the same and
+        the value stays the same, too.
+
+
+Hitless-switching
+-----------------
+
+Unused (off) but HSW_MEAS_SETTLE still is changed with freq.
+
+    value is around 22468 (within 1%)
+
+
