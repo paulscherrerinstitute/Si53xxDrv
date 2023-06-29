@@ -155,6 +155,15 @@ namespace Si53xx {
 			virtual void dumpCSV(const std::string &f);
 			virtual void dumpCSV(FILE *f = stdout);
 
+			// initialize to a sane state; usually to values obtained from CBPro;
+			// you can also call 'readCSV' from a subclass.
+			// Note that 'init' assumes the preamble has already been sent
+			// and it does not send the postamble itself.
+			// The rationale is that an application uses this as part
+			// of a more complete initialization sequence in order to
+			// establish a base-line.
+			virtual void init();
+
 		private:
 			struct StrCmp {
 				int operator()(const char *a, const char *b) const
@@ -170,6 +179,12 @@ namespace Si53xx {
 			Settings      settings;
 			I2cDriverShp  drv;
 			int           pageNo;
+			ValType       zdmFreq;
+                        ValType       refFreq;
+                        ValType       vcoMinFreq;
+                        ValType       vcoMaxFreq;
+                        ValType       pfdMinFreq;
+                        ValType       pfdMaxFreq;
 
 		private:
 			void readRange (unsigned offset, unsigned n, uint8_t *buf);
@@ -252,9 +267,15 @@ namespace Si53xx {
 			virtual void     showDiff(Si53xx *other, const char *fn);
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
 
-			// -1 disables ZDM
+			// Program the PLL for ZDM mode and frequency 'hz' on input 'inp'
+			// using N divider 'nidx'
+			virtual void     setZDM(ValType hz, unsigned inp, unsigned nidx = 0);
+
+			// enable/disables ZDM
 			virtual void     setZDM(bool enabled);
-			virtual bool     getZDM();
+			// returns 0 if ZDM is disabled and the configured input freqency
+			// if ZDM is enabled;
+			virtual ValType  getZDM();
 
 			virtual void     selInput(int inp);
 	};

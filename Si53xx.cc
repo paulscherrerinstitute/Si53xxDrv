@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include "RAIIfeil.h"
+#include <math.h>
 
 using namespace Si53xx;
 
@@ -144,9 +145,17 @@ Si53xx::toAccess(const std::string &s)
 }
 
 Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
-: drv   ( drv   ),
-  pageNo( -1    ),
-  params( p     )
+: drv              ( drv         ),
+  pageNo           ( -1          ),
+  params           ( p           ),
+  zdmFreq          ( 0           ),
+  refFreq          (    48000000 ),
+  // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
+  vcoMinFreq       ( 13280000000 ),
+  vcoMaxFreq       ( 13600000000 ),
+  // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
+  pfdMinFreq       (     1770000 ),
+  pfdMaxFreq       (     2000000 )
 {
 	// create the array of all registers
 	for (int i = 0; i <= 0xfff; i++ ) {
@@ -898,9 +907,195 @@ Si53xx::Si53xx::selInput(int inp)
 	}
 }
 
+struct DivParm {
+	Si53xx::Si53xx::ValType num, den;
+	double                  r;
+
+	DivParm()
+	: num(0), den(0), r(0.0)
+	{
+	}
+};
+
+struct PLLParm {
+	DivParm          P, M, MXAXB, N;
+	unsigned         pidx, nidx;
+	Si53xx::Si53xx  *obj;
+
+	PLLParm(Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
+	: obj(obj), pidx(pidx), nidx(nidx)
+	{
+	}
+
+	void get()
+	{
+		obj->getPDivider    ( pidx,  &P.num,     &P.den );
+		obj->getMDivider    (        &M.num,     &M.den );
+		obj->getMXAXBDivider(        &MXAXB.num, &MXAXB.den );
+		obj->getNDivider    ( nidx,  &N.num,     &N.den );
+	}
+
+	void set()
+	{
+		if ( P.den > 0 ) {
+			obj->setPDivider    ( pidx,   P.num,      P.den );
+		} else {
+			obj->setPDivider    ( pidx,   P.r );
+		}
+		if ( M.den > 0 ) {
+			obj->setMDivider    (         M.num,      M.den );
+		} else {
+			obj->setMDivider    (         M.r     );
+		}
+		if ( MXAXB.den > 0 ) {
+			obj->setMXAXBDivider(         MXAXB.num,  MXAXB.den );
+		} else {
+			obj->setMXAXBDivider(         MXAXB.r );
+		}
+		if ( N.den > 0 ) {
+			obj->setNDivider    ( nidx,   N.num,      N.den );
+		} else {
+			obj->setNDivider    ( nidx,   N.r     );
+		}
+	}
+};
+
+static void findDiv(
+	Si53xx::Si53xx::ValType f,
+	Si53xx::Si53xx::ValType min,
+	Si53xx::Si53xx::ValType max,
+	DivParm                *p
+)
+{
+	Si53xx::Si53xx::ValType v;
+
+	v = f/max;
+
+	while ( f/v > max ) v++;
+
+	while ( f/v >= min ) {
+		p->num = v;
+		p->den = 1;
+		// try to find multiples of 5
+		if ( ( v % 5 ) == 0 ) {
+			return;
+		}
+		v++;
+	}
+	if ( 0 == p->den ) {
+		p->r   = (double)f/(double)max;
+	}
+}
+
+void
+Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
+{
+	PLLParm op( this, inp, ndiv );
+	PLLParm np( this, inp, ndiv );
+
+	op.get();
+
+	try {
+		ValType p,n, p5 = 0, n5 = 0;
+
+		// try to find integer dividers with the constraint that fvco remain
+		// within the 'known' range.
+		//   fvco = fin / P * 5 * M      (fixed 5 divider present)
+		//   fout = fin (zdm) = fvco/2/N (min. R divider is 2    )
+		//
+		//   thus for integer ratios:  5*M = 2 * N * P
+
+		n  = this->vcoMinFreq/hz/2; 
+
+		for ( p = (hz/this->pfdMinFreq); hz/p <= this->pfdMaxFreq && 0 == p5; p-- ) {
+			// record a valid integer P
+			np.P.num = p;
+			np.P.den = 1;
+			if ( 0 == ( np.P.num % 5 ) ) {
+				// 5 divides P => M = 2*N*p5
+				p5 = p/5;
+				if ( hz*n*2 <= this->vcoMaxFreq ) {
+					np.M.num = 2*n*p5;
+					np.M.den = 1;
+					np.N.num = n;
+					np.N.den = 1;
+				} else {
+					/* seriously? */
+					np.N.r   = ((double)this->vcoMinFreq + (double)this->vcoMaxFreq)/2.0;
+					np.N.r   /= 2.0*(double)hz;
+					np.M.r   = 2.0 * np.N.r * (double) p5;
+				}
+			}
+		}
+
+		if ( 0 == p5 ) {
+			// P not divisible by 5; try to find an N
+			while ( hz*n*2 <= this->vcoMaxFreq && 0 == n5 ) {
+				if ( 0 == ( n % 5 ) ) {
+					// found one
+					n5       = n/5;
+					np.N.num = n;
+					np.N.den = 1;
+					if ( 0 == np.P.den ) {
+						np.M.num = n5 * 2 * (ValType)round( np.P.r );
+					} else {
+						np.M.num = n5 * 2 * np.P.num;
+					}
+				}
+				n--;
+			}
+		}
+
+		if ( 0 == p5 && 0 == n5 ) {
+			/* no multiple of 5 found; must use fractional divider;
+			 * use on P. Note the 0 == p5 test also covers the
+			 * case when no integer P divider at all is found...
+			 */
+			ValType fvco;
+			double  pflt = 0.0;
+			for ( n = this->vcoMinFreq/2/hz; (fvco = n*2*hz) <= this->vcoMaxFreq && 0.0 == pflt; n-- ) {
+				for ( ValType m = fvco/5/this->pfdMinFreq; fvco / 5 / m <= this->pfdMaxFreq && 0.0 == pflt; m-- ) {
+					np.N.num = n;
+					np.N.den = 1;
+					np.M.num = m;
+					np.M.den = 1;
+					pflt = (5.0 * (double)m)/2.0/(double)n;
+				}
+			}
+			if ( 0.0 == pflt ) {
+				/* still no solution? In this unlikely case we brute-force all
+				 * fractional dividers...
+				 */
+				double vcoMid = (double)(this->vcoMinFreq + this->vcoMaxFreq)/2.0;
+				double pfdMid = (double)(this->pfdMinFreq + this->pfdMaxFreq)/2.0;
+
+				pflt   = (double)hz / pfdMid;
+				np.N.r = vcoMid/(double)hz/2.0;
+				np.M.r = vcoMid/5.0/pfdMid;
+			}
+			np.P.r   = pflt;
+			np.P.den = 0; // reset an stale integer divider
+		}
+
+		np.set();
+		this->zdmFreq = hz;
+	} catch ( std::exception &e ) {
+		// if the very first modification failed we may not be able to restore
+		try {
+			// try to restore original settings
+			op.set();
+		} catch ( std::exception &e ) {
+		}
+		throw;
+	}
+}
+
 void
 Si53xx::Si53xx::setZDM(bool ena)
 {
+	if ( 0 == this->zdmFreq ) {
+		throw std::invalid_argument("Si53xx::setZDM: must set an input frequency before you can engage ZDM");
+	}
 	this->set( "ZDM_EN", (ena ? 1 : 0 ) );
 
 	if ( ena ) {
@@ -916,10 +1111,10 @@ Si53xx::Si53xx::setZDM(bool ena)
 	this->set( "OUTX_ALWAYS_ON", outx );
 }
 
-bool
+uint64_t
 Si53xx::Si53xx::getZDM()
 {
-	return this->get( "ZDM_EN" );
+	return this->get( "ZDM_EN" ) ? this->zdmFreq : 0;
 }
 
 unsigned
@@ -959,4 +1154,9 @@ Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
 		val = (val >> 1) - 1;
 		this->set( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ), val );
 	}
+}
+
+void
+Si53xx::Si53xx::init()
+{
 }
