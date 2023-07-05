@@ -159,6 +159,10 @@ namespace Si53xx {
 			virtual void dumpCSV(const std::string &f);
 			virtual void dumpCSV(FILE *f = stdout);
 
+			virtual void dumpSettings(const char *f);
+			virtual void dumpSettings(const std::string &f);
+			virtual void dumpSettings(FILE *f = stdout);
+
 			// initialize to a sane state; usually to values obtained from CBPro;
 			// you can also call 'readCSV' from a subclass.
 			// Note that 'init' assumes the preamble has already been sent

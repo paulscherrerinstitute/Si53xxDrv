@@ -437,7 +437,6 @@ Si53xx::Si53xx::dumpCSV(const std::string &f)
 	this->dumpCSV( f.c_str() );
 }
 
-
 void
 Si53xx::Si53xx::dumpCSV(const char *f)
 {
@@ -458,6 +457,43 @@ uint8_t buf[4096];
 			throw std::runtime_error("Si53xx::dumpCSV(): file write error");
 		}
 	}	
+}
+
+void
+Si53xx::Si53xx::dumpSettings(const std::string &f)
+{
+	this->dumpSettings( f.c_str() );
+}
+
+void
+Si53xx::Si53xx::dumpSettings(const char *f)
+{
+	if ( f ) {
+		this->dumpSettings( *RAIIfeil( f, "w+" ) );
+	} else {
+		this->dumpSettings();
+	}
+}
+
+void
+Si53xx::Si53xx::dumpSettings(FILE *f)
+{
+Settings::iterator it  = this->settings.begin();
+Settings::iterator ite = this->settings.end();
+	while ( it != ite ) {
+		const char *k( (*it).first );
+		ValType     vMine;
+		try {
+			vMine = this->get( k );
+		} catch ( std::runtime_error &e ) {
+			// skip unininitialized/untouched regs when using the
+			// dummy driver...
+			++it;
+			continue;
+		}
+		fprintf(f, "%40s: 0x%lx\n", k, vMine);
+		++it;
+	}
 }
 
 void

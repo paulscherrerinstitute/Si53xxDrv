@@ -27,8 +27,9 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 
       Si5395() except+
       Si5395(const char *, unsigned) except+
-      void     readCSV(const char *, bool)          except+
-      void     dumpCSV(const char *)          except+
+      void     readCSV(const char *, bool) except+
+      void     dumpCSV(const char *) except+
+      void     dumpSettings(const char *) except+
       void     getNDivider(unsigned idx, ValType *num, ValType *den) except+
       void     setNDivider(unsigned idx, ValType num, ValType den) except+
 
@@ -92,6 +93,9 @@ cdef class SI5395:
 
     def dumpCSV(self, fnam):
       self.c_cls.dumpCSV( fnam )
+
+    def dumpSettings(self, fnam):
+      self.c_cls.dumpSettings( fnam )
 
     def getNDivider(self, idx):
       cdef uint64_t n,d
