@@ -83,4 +83,5 @@ FILE       *f      = stdout;
 #endif
 	fprintf(f,"\n};\n");
 	fprintf(f,"\n}");
+	return 0;
 }
