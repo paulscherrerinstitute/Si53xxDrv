@@ -41,7 +41,9 @@ TstDrv::rd(uint8_t off, unsigned n, uint8_t *buf)
 		unsigned a = (this->page << 8) | off;
         int      v = this->regs[a].getValue();
 		if ( v < 0 ) {
-			throw std::runtime_error("Uninitialized reg");
+			char buf[256];
+			snprintf(buf, sizeof(buf), "Uninitialized reg 0x%x", a);
+			throw std::runtime_error(buf);
 		}
 		*buf = v;
 		buf++;

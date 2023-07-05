@@ -27,7 +27,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 
       Si5395() except+
       Si5395(const char *, unsigned) except+
-      void     readCSV(const char *)          except+
+      void     readCSV(const char *, bool)          except+
       void     dumpCSV(const char *)          except+
       void     getNDivider(unsigned idx, ValType *num, ValType *den) except+
       void     setNDivider(unsigned idx, ValType num, ValType den) except+
@@ -46,12 +46,23 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     sendPreamble() except+
       void     sendPostamble() except+
 
+      void     setZDM(uint64_t, unsigned, unsigned) except+
       void     setZDM(bool) except+
       bool     getZDM() except+
 
-      void     selInput(int) except+
+      void     selInput(unsigned) except+
 
-      void     setOutput(unsigned, bool, MOutputConfig, unsigned) except+
+      void     setOutputMux(unsigned, unsigned) except+
+      void     setOutput(unsigned, bool, MOutputConfig) except+
+
+      unsigned getStatusLOS() except+
+      unsigned getStatusOOF() except+
+      bool     getStatusLOS(unsigned) except+
+      bool     getStatusOOF(unsigned) except+
+      bool     getStatusLOL() except+
+      bool     getStatusHOLD() except+
+      void     setIOVDD3V3(bool) except+
+      bool     getIOVDD3V3() except+
 
 cpdef enum OutputConfig:
   OFF    = <int>off
@@ -76,8 +87,8 @@ cdef class SI5395:
     def set(self, key, val):
       self.c_cls.set( key, val )
 
-    def readCSV(self, fnam):
-      self.c_cls.readCSV( fnam )
+    def readCSV(self, fnam, noAutoPreamble=False):
+      self.c_cls.readCSV( fnam, noAutoPreamble )
 
     def dumpCSV(self, fnam):
       self.c_cls.dumpCSV( fnam )
@@ -126,14 +137,46 @@ cdef class SI5395:
     def sendPostamble(self):
       self.c_cls.sendPostamble()
 
-    def setOutput(self, idx, alt, OutputConfig cfg, nDivider):
-      self.c_cls.setOutput( idx, alt, <MOutputConfig>cfg, nDivider )
+    def setOutputMux(self, idx, nDivider):
+      self.c_cls.setOutputMux( idx, nDivider )
+
+    def setOutput(self, idx, alt, OutputConfig cfg):
+      self.c_cls.setOutput( idx, alt, <MOutputConfig>cfg )
 
     def selInput(self, inp):
       self.c_cls.selInput( inp )
 
-    def setZDM(self, val):
-      self.c_cls.setZDM( val )
+    def setZDM(self, hzOrBool, inpIdx = None, nDivIdx = None ):
+      if ( inpIdx is None ) and  (nDivIdx is None):
+        self.c_cls.setZDM( hzOrBool )
+      elif not ( inpIdx is None ) and not (nDivIdx is None):
+        self.c_cls.setZDM( hzOrBool, inpIdx, nDivIdx )
+      else:
+        raise TypeError("setZDM; illegal arguments")
 
     def getZDM(self):
       return self.c_cls.getZDM()
+
+    def getStatusLOS(self, idx=None):
+      if (idx is None):
+        return self.c_cls.getStatusLOS()
+      else:
+        return self.c_cls.getStatusLOS(idx)
+
+    def getStatusOOF(self, idx=None):
+      if (idx is None):
+        return self.c_cls.getStatusOOF()
+      else:
+        return self.c_cls.getStatusOOF(idx)
+
+    def getStatusLOL(self):
+      return self.c_cls.getStatusLOL()
+
+    def getStatusHOLD(self):
+      return self.c_cls.getStatusHOLD()
+
+    def setIOVDD3V3(self, v):
+      self.c_cls.setIOVDD3V3(v)
+
+    def getIOVDD3V3(self):
+      return self.c_cls.getIOVDD3V3()

@@ -148,7 +148,7 @@ Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53x
 : drv              ( drv         ),
   pageNo           ( -1          ),
   params           ( p           ),
-  zdmFreq          ( 0           ),
+  finFreq          ( 0           ),
   refFreq          (    48000000 ),
   // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
   vcoMinFreq       ( 13280000000 ),
@@ -372,25 +372,29 @@ Si53xx::Si53xx::set(const std::string &k, ValType v)
 
 
 void
-Si53xx::Si53xx::readCSV(const std::string &fn)
+Si53xx::Si53xx::readCSV(const std::string &fn, bool noAutoPreamble)
 {
-	this->readCSV( fn.c_str() );
+	this->readCSV( fn.c_str(), noAutoPreamble );
 }
 
 void
-Si53xx::Si53xx::readCSV(const char *fn)
+Si53xx::Si53xx::readCSV(const char *fn, bool noAutoPreamble)
 {
-	this->readCSV( *RAIIfeil( fn ) );
+	this->readCSV( *RAIIfeil( fn ), noAutoPreamble );
 }
 
 
 void
-Si53xx::Si53xx::readCSV(FILE *f)
+Si53xx::Si53xx::readCSV(FILE *f, bool noAutoPreamble)
 {
 char     buf[2048];
 int      off  = -1;
 uint8_t  rbuf[256];
 int      idx  = 0;
+
+	if ( ! noAutoPreamble && ! isPLLOff() ) {
+		this->sendPreamble();
+	}
 
 	while ( fgets(buf, sizeof(buf), f) ) {
 		unsigned a,v;
@@ -418,6 +422,10 @@ int      idx  = 0;
 	// mop up
 	if ( idx > 0 ) {
 		this->writeRegs( off, idx, rbuf );
+	}
+
+	if ( ! noAutoPreamble && isPLLOff() ) {
+		this->sendPostamble();
 	}
 }
 
@@ -468,21 +476,24 @@ ValType n, d;
 void
 Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValType den)
 {
-	if ( s.requirePllOff && ! isPllOff() ) {
+	if ( s.requirePLLOff && ! isPLLOff() ) {
 		throw std::logic_error("Si53xx::setDivider: cannot set divider while PLL is running");
 	}
 	set( s.num,    num );
 	set( s.den,    den );
 
 	if ( 'P' == s.prefix[0] || 0 == strcmp(s.prefix.c_str(), "M") ) {
-		this->set( *FMT( s.prefix + "_FRACN_EN"), (den > 1 ? 1 : 0 ) );
 		if ( 'P' == s.prefix[0] ) {
+
+			this->set( *FMT( s.prefix + "_FRACN_EN"), (den > 1 ? 1 : 0 ) );
+
 			if ( den > 1 ) {
 				this->andmsk( "PDIV_FRACN_CLK_DIS", ~ ( 1 << s.idx ) );
 			} else {
 				this->ormsk ( "PDIV_FRACN_CLK_DIS",   ( 1 << s.idx ) );
 			}
 		} else {
+			this->set( "M_FRAC_EN",         ( den > 1 ? 1 : 0 ) );
 			this->set( "FRACN_CLK_DIS_PLL", ( den > 1 ? 0 : 1 ) );
 		}
 	}
@@ -524,7 +535,7 @@ Si53xx::Si53xx::getDividerSettings(const char *prefix, int idx)
 	s.num           = this->at( *FMT( s.prefix + "_NUM"   ) );
 	s.den           = this->at( *FMT( s.prefix + "_DEN"   ) );
 	s.update        = this->at( *FMT( s.prefix + "_UPDATE") );
-	s.requirePllOff = (s.prefix[0] != 'N');
+	s.requirePLLOff = (s.prefix[0] != 'N');
 	return s;
 }
 
@@ -768,7 +779,7 @@ uint64_t n, d, a, p;
 void
 Si53xx::Si53xx::sendPreamble()
 {
-	if ( isPllOff() ) {
+	if ( isPLLOff() ) {
 		throw std::logic_error("Si53xx::sendPreamble: preamble has already been sent?");
 	}
 	// send magical, undocumented values :-(
@@ -783,7 +794,7 @@ Si53xx::Si53xx::sendPreamble()
 void
 Si53xx::Si53xx::sendPostamble()
 {
-	if ( ! isPllOff() ) {
+	if ( ! isPLLOff() ) {
 		throw std::logic_error("Si53xx::sendPostable: postamble has already been sent?");
 	}
 	set( "BW_UPDATE_PLL", 1 );
@@ -795,7 +806,7 @@ Si53xx::Si53xx::sendPostamble()
 }
 
 bool
-Si53xx::Si53xx::isPllOff()
+Si53xx::Si53xx::isPLLOff()
 {
 	return get("AMBLE2") != 0x00;
 }
@@ -824,7 +835,19 @@ static void chkAlt(unsigned idx, bool alt, const std::string pre)
 }
 
 void
-Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider)
+Si53xx::Si53xx::setOutputMux(unsigned idx, unsigned nDivider)
+{
+	// CBP shows out0a and out9a sharing the N divider with out0
+	// and out9, respectively. We'll enforce that even though there
+	// are separate registers...
+	set( *FMT( "OUT%u_MUX_SEL", idx ) , nDivider ); 
+	if ( 0 == idx || 9 == idx ) {
+		set( *FMT( "OUT%uA_MUX_SEL", idx ) , nDivider ); 
+	}
+}
+
+void
+Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
 {
 	chkAlt( idx, alt, "Si53xx::SetOutput" );
 	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
@@ -850,8 +873,6 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned 
 
 	set( *FMT( "%sOE",       *pre ),   outEn );
 	set( *FMT( "%sPDN",      *pre ), ! outEn );
-
-	set( *FMT( "%sMUX_SEL", *pre ), nDivider ); 
 
 	if ( 0 == get( *FMT( "R%d%s_REG", idx, (alt ? "A" : "") ) ) ) {
 		this->setRDivider( idx, alt, 2 );
@@ -893,8 +914,11 @@ Settings::iterator ite = this->settings.end();
 }
 
 void
-Si53xx::Si53xx::selInput(int inp)
+Si53xx::Si53xx::selInput(unsigned inp)
 {
+	if ( inp > 3 ) {
+		throw std::invalid_argument("Si53xx::selInput: invalid input");
+	}
 	ValType v = (1 << inp);
 	this->set( "IN_SEL_REGCTRL", 1 );
 	this->ormsk( "IN_EN",                 v );
@@ -917,173 +941,268 @@ struct DivParm {
 	}
 };
 
-struct PLLParm {
-	DivParm          P, M, MXAXB, N;
-	unsigned         pidx, nidx;
-	Si53xx::Si53xx  *obj;
+class ZDMParms;
 
-	PLLParm(Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
-	: obj(obj), pidx(pidx), nidx(nidx)
+typedef std::shared_ptr<ZDMParms> ZDMParmsShp;
+
+class ZDMParms : public Si53xx::Si53xx::PLLParms {
+protected:
+	unsigned nidx;
+public:
+	Si53xx::Si53xx::DivParm N;
+
+	ZDMParms(const Key &k, Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
+	: Si53xx::Si53xx::PLLParms( k, obj, pidx ),
+	  nidx( nidx )
 	{
+		if ( pidx > 2 ) {
+			throw std::invalid_argument("Si53xx::ZDMParms: invalid input (must be < 3)");
+		}
 	}
 
-	void get()
+	virtual void get()
 	{
-		obj->getPDivider    ( pidx,  &P.num,     &P.den );
-		obj->getMDivider    (        &M.num,     &M.den );
-		obj->getMXAXBDivider(        &MXAXB.num, &MXAXB.den );
-		obj->getNDivider    ( nidx,  &N.num,     &N.den );
+		Si53xx::Si53xx::PLLParms::get();
+
+		obj->getNDivider( nidx,  &N.num,     &N.den );
 	}
 
-	void set()
+	virtual void set()
 	{
-		if ( P.den > 0 ) {
-			obj->setPDivider    ( pidx,   P.num,      P.den );
-		} else {
-			obj->setPDivider    ( pidx,   P.r );
-		}
-		if ( M.den > 0 ) {
-			obj->setMDivider    (         M.num,      M.den );
-		} else {
-			obj->setMDivider    (         M.r     );
-		}
-		if ( MXAXB.den > 0 ) {
-			obj->setMXAXBDivider(         MXAXB.num,  MXAXB.den );
-		} else {
-			obj->setMXAXBDivider(         MXAXB.r );
-		}
+		Si53xx::Si53xx::PLLParms::set();
 		if ( N.den > 0 ) {
 			obj->setNDivider    ( nidx,   N.num,      N.den );
 		} else {
 			obj->setNDivider    ( nidx,   N.r     );
 		}
 	}
+
+	virtual Si53xx::Si53xx::PLLParmsShp clone()
+	{
+		return std::make_shared<ZDMParms>(*this);
+	}
+	
+	static ZDMParmsShp create(Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
+	{
+		return std::make_shared<ZDMParms>(Key(), obj, pidx, nidx);
+	}
+
+	virtual void validate()
+	{
+		PLLParms::validate();
+		if ( 1 != N.den ) {
+			throw std::invalid_argument("Si53xx::ZDMParms::validate: min. N not integer");
+		}
+		if ( 1 != P.den ) {
+			throw std::invalid_argument("Si53xx::ZDMParms::validate: min. P not integer");
+		}
+		// ignore uint64 overflow
+		if ( P.num * N.num * 2 * M.den != 5 * M.num ) {
+			throw std::invalid_argument("Si53xx::ZDMParms::validate: invalid divider combination for ZDM mode!");
+		}
+	}
 };
 
-static void findDiv(
-	Si53xx::Si53xx::ValType f,
-	Si53xx::Si53xx::ValType min,
-	Si53xx::Si53xx::ValType max,
-	DivParm                *p
-)
+
+Si53xx::Si53xx::PLLParms::PLLParms(const Key &k, Si53xx *obj, unsigned pidx)
+: obj(obj), pidx(pidx), fin(0)
 {
-	Si53xx::Si53xx::ValType v;
-
-	v = f/max;
-
-	while ( f/v > max ) v++;
-
-	while ( f/v >= min ) {
-		p->num = v;
-		p->den = 1;
-		// try to find multiples of 5
-		if ( ( v % 5 ) == 0 ) {
-			return;
-		}
-		v++;
-	}
-	if ( 0 == p->den ) {
-		p->r   = (double)f/(double)max;
+	if ( pidx > 3 ) {
+		throw std::invalid_argument("Si53xx::PLLParms: invalid input selection");
 	}
 }
 
 void
+Si53xx::Si53xx::PLLParms::get()
+{
+	obj->getPDivider    ( pidx,  &P.num,     &P.den );
+	obj->getMDivider    (        &M.num,     &M.den );
+	obj->getMXAXBDivider(        &MXAXB.num, &MXAXB.den );
+	this->fin = obj->finFreq;
+}
+
+void
+Si53xx::Si53xx::PLLParms::set()
+{
+	if ( P.den > 0 ) {
+		obj->setPDivider    ( pidx,   P.num,      P.den );
+	} else {
+		obj->setPDivider    ( pidx,   P.r );
+	}
+	if ( M.den > 0 ) {
+		obj->setMDivider    (         M.num,      M.den );
+	} else {
+		obj->setMDivider    (         M.r     );
+	}
+	if ( MXAXB.den > 0 ) {
+		obj->setMXAXBDivider(         MXAXB.num,  MXAXB.den );
+	} else {
+		obj->setMXAXBDivider(         MXAXB.r );
+	}
+
+	obj->set( "IN_SEL", pidx );
+
+	// assume OOF reference is XAXB
+    double oofRefFreq = (double)obj->refFreq/(double)(1 << obj->get("OOFXO_DIV_SEL"));
+
+    double oofDivLd   = round( log2( (double)fin/oofRefFreq ) );
+
+    ValType  oofDiv   = (1 << (ValType )oofDivLd);
+    
+	obj->set( *FMT( "OOF%d_DIV_SEL", pidx ), oofDiv );
+
+	double oofRatio   = ( (double)(1<<24) ) * (double)fin / (double)oofDiv / oofRefFreq;
+
+	obj->set( *FMT( "OOF%d_RATIO_REF", pidx ), oofRatio );
+
+	double fpfd       = (double) fin / P.get(); 
+    double fvco       = (double) fin / P.get() * 5.0 * M.get();
+
+	// magial time constant: 0.01seconds (extrapolated from cbpro)
+    double holdCyc    = ((double)(1<<24)) / 0.01 / fpfd;
+
+	obj->set( "HOLD_15M_CYC_COUNT", (ValType)holdCyc);
+
+	// more magic:
+	obj->set( "OUT_MAX_LIMIT_LMT",  (ValType)(fvco/0.7324384635355068) );
+	obj->set( "HOLD_SETTLE_TARGET", (ValType)(fvco/17.89784753839401 ) );
+
+	obj->finFreq = this->fin;
+}
+
+void
+Si53xx::Si53xx::PLLParms::validate()
+{
+	double fpfd = fin / P.get();
+
+	if ( fpfd  < obj->pfdMinFreq ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: min. PFD violation by fin and or P divider");
+	}
+	if ( fpfd  > obj->pfdMaxFreq ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: max. PFD violation by fin and or P divider");
+	}
+
+	double fvco = fpfd * M.get() * 5.0;
+
+	if ( fvco  < obj->vcoMinFreq ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: min. VCO violation by M divider");
+	}
+	if ( fvco  > obj->vcoMaxFreq ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: max. VCO violation by M divider");
+	}
+}
+
+
+// Program the PLL for ZDM mode using integer dividers.
+// If no all-integer configuration is found then this simple
+// algorithm does not work.
+//
+// The following problem would have to be solved:
+//
+//  fvco_min <= fin * 2 * Nden/Nnum  <= fvco_max
+//
+//  fpfd_min <= fin * Pden/Pnum      <= fpfd_max
+//
+//     Mnum/Mden = 2/5 * Pnum * Nnum / Pden / Nden
+//
+//  with all the numbers remaining within their valid range
+//
+
+void
 Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 {
-	PLLParm op( this, inp, ndiv );
-	PLLParm np( this, inp, ndiv );
+	ZDMParmsShp np = ZDMParms::create( this, inp, ndiv );
 
-	op.get();
+	ValType p,n, p5 = 0, n5 = 0;
 
+	// try to find integer dividers with the constraint that fvco remain
+	// within the 'known' range.
+	//   fvco = fin / P * 5 * M      (fixed 5 divider present)
+	//   fout = fin (zdm) = fvco/2/N (min. R divider is 2    )
+	//
+	//   thus for integer ratios:  5*M = 2 * N * P
+
+	n  = this->vcoMaxFreq/hz/2; 
+	if ( hz*n*2 < this->vcoMinFreq ) {
+		throw std::runtime_error("Si53xx::setZDM: unable to find all-integer PLL configuration");
+		// frequency probably too high; must resort to fractional N
+	}
+
+	// see if we find a p divisible by 5; this may work for larger fin/fpfd ratios
+	// where we are less likely to find an N divisible by 5.
+	for ( p = (hz/this->pfdMinFreq); (hz <= this->pfdMaxFreq * p) && 0 == p5; p-- ) {
+		// record a valid integer P
+		np->P.num = p;
+		np->P.den = 1;
+		if ( 0 == ( np->P.num % 5 ) ) {
+			// 5 divides P => M = 2*N*p5
+			p5 = p/5;
+			np->M.num = 2*n*p5;
+			np->M.den = 1;
+			np->N.num = n;
+			np->N.den = 1;
+		}
+	}
+
+	if ( 0 == np->P.den ) {
+		throw std::runtime_error("Si53xx::setZDM: unable to find all-integer PLL configuration");
+		// would have to resort to fractional P
+	}
+
+	if ( 0 == p5 ) {
+		// P not divisible by 5; try to find an N. Better for small fin
+		while ( hz*n*2 >= this->vcoMinFreq && 0 == n5 ) {
+			// record a valid integer N
+			np->N.num = n;
+			np->N.den = 1;
+			if ( 0 == ( n % 5 ) ) {
+				// found one
+				n5        = n/5;
+				np->N.num = n;
+				np->N.den = 1;
+				// np->P.den != 0 was tested above
+				np->M.num = 2 * n5 * np->P.num;
+				np->M.den = 1;
+			}
+			n--;
+		}
+	}
+
+	// at this point we do have integer n and p but not necessarily a n5 or a p5
+
+	if ( 0 == p5 && 0 == n5 ) {
+		/* no multiple of 5 found; must use fractional divider;
+		 * use on M. Note the 0 == p5 test also covers the
+		 * case when no integer P divider at all is found...
+		 */
+		np->M.num = 2 * np->N.num * np->P.num;
+		np->M.den = 5;
+	}
+
+	// program the reference divider
+	np->MXAXB.r = (double)hz * (double)np->N.num/(double)np->N.den * 2.0 / this->refFreq;
+
+	np->fin = hz;
+
+	this->setPLL( np );
+
+	this->selInput( inp );
+}
+
+void
+Si53xx::Si53xx::setPLL(Si53xx::Si53xx::PLLParmsShp p)
+{
+	p->validate();
+
+	PLLParmsShp orig = p->clone();
+	orig->get();
 	try {
-		ValType p,n, p5 = 0, n5 = 0;
-
-		// try to find integer dividers with the constraint that fvco remain
-		// within the 'known' range.
-		//   fvco = fin / P * 5 * M      (fixed 5 divider present)
-		//   fout = fin (zdm) = fvco/2/N (min. R divider is 2    )
-		//
-		//   thus for integer ratios:  5*M = 2 * N * P
-
-		n  = this->vcoMinFreq/hz/2; 
-
-		for ( p = (hz/this->pfdMinFreq); hz/p <= this->pfdMaxFreq && 0 == p5; p-- ) {
-			// record a valid integer P
-			np.P.num = p;
-			np.P.den = 1;
-			if ( 0 == ( np.P.num % 5 ) ) {
-				// 5 divides P => M = 2*N*p5
-				p5 = p/5;
-				if ( hz*n*2 <= this->vcoMaxFreq ) {
-					np.M.num = 2*n*p5;
-					np.M.den = 1;
-					np.N.num = n;
-					np.N.den = 1;
-				} else {
-					/* seriously? */
-					np.N.r   = ((double)this->vcoMinFreq + (double)this->vcoMaxFreq)/2.0;
-					np.N.r   /= 2.0*(double)hz;
-					np.M.r   = 2.0 * np.N.r * (double) p5;
-				}
-			}
-		}
-
-		if ( 0 == p5 ) {
-			// P not divisible by 5; try to find an N
-			while ( hz*n*2 <= this->vcoMaxFreq && 0 == n5 ) {
-				if ( 0 == ( n % 5 ) ) {
-					// found one
-					n5       = n/5;
-					np.N.num = n;
-					np.N.den = 1;
-					if ( 0 == np.P.den ) {
-						np.M.num = n5 * 2 * (ValType)round( np.P.r );
-					} else {
-						np.M.num = n5 * 2 * np.P.num;
-					}
-				}
-				n--;
-			}
-		}
-
-		if ( 0 == p5 && 0 == n5 ) {
-			/* no multiple of 5 found; must use fractional divider;
-			 * use on P. Note the 0 == p5 test also covers the
-			 * case when no integer P divider at all is found...
-			 */
-			ValType fvco;
-			double  pflt = 0.0;
-			for ( n = this->vcoMinFreq/2/hz; (fvco = n*2*hz) <= this->vcoMaxFreq && 0.0 == pflt; n-- ) {
-				for ( ValType m = fvco/5/this->pfdMinFreq; fvco / 5 / m <= this->pfdMaxFreq && 0.0 == pflt; m-- ) {
-					np.N.num = n;
-					np.N.den = 1;
-					np.M.num = m;
-					np.M.den = 1;
-					pflt = (5.0 * (double)m)/2.0/(double)n;
-				}
-			}
-			if ( 0.0 == pflt ) {
-				/* still no solution? In this unlikely case we brute-force all
-				 * fractional dividers...
-				 */
-				double vcoMid = (double)(this->vcoMinFreq + this->vcoMaxFreq)/2.0;
-				double pfdMid = (double)(this->pfdMinFreq + this->pfdMaxFreq)/2.0;
-
-				pflt   = (double)hz / pfdMid;
-				np.N.r = vcoMid/(double)hz/2.0;
-				np.M.r = vcoMid/5.0/pfdMid;
-			}
-			np.P.r   = pflt;
-			np.P.den = 0; // reset an stale integer divider
-		}
-
-		np.set();
-		this->zdmFreq = hz;
+		p->set();
 	} catch ( std::exception &e ) {
 		// if the very first modification failed we may not be able to restore
 		try {
 			// try to restore original settings
-			op.set();
+			orig->set();
 		} catch ( std::exception &e ) {
 		}
 		throw;
@@ -1093,7 +1212,7 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 void
 Si53xx::Si53xx::setZDM(bool ena)
 {
-	if ( 0 == this->zdmFreq ) {
+	if ( ( 0 == this->finFreq ) and ena ) {
 		throw std::invalid_argument("Si53xx::setZDM: must set an input frequency before you can engage ZDM");
 	}
 	this->set( "ZDM_EN", (ena ? 1 : 0 ) );
@@ -1108,13 +1227,17 @@ Si53xx::Si53xx::setZDM(bool ena)
 
 	// assume out9a; aka #11
 	ValType outx = ( ena ? (1<<11) : 0 );
-	this->set( "OUTX_ALWAYS_ON", outx );
+	if ( ena ) {
+		this->ormsk( "OUTX_ALWAYS_ON", outx );
+	} else {
+		this->andmsk( "OUTX_ALWAYS_ON", ~outx );
+	}
 }
 
 uint64_t
 Si53xx::Si53xx::getZDM()
 {
-	return this->get( "ZDM_EN" ) ? this->zdmFreq : 0;
+	return this->get( "ZDM_EN" ) ? this->finFreq : 0;
 }
 
 unsigned
@@ -1159,4 +1282,42 @@ Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
 void
 Si53xx::Si53xx::init()
 {
+}
+
+unsigned
+Si53xx::Si53xx::getStatusLOS()
+{
+	// max. 4 inputs; all others bits set
+	return (-16) | this->get("LOS");
+}
+
+bool
+Si53xx::Si53xx::getStatusLOL()
+{
+	return this->get("LOL");
+}
+
+unsigned
+Si53xx::Si53xx::getStatusOOF()
+{
+	// max. 4 inputs; all others bits set
+	return (-16) | this->get("OOF");
+}
+
+bool
+Si53xx::Si53xx::getStatusHOLD()
+{
+	return this->get("HOLD");
+}
+
+void
+Si53xx::Si53xx::setIOVDD3V3(bool sel)
+{
+	this->set("IO_VDD_SEL", (sel ? 1 : 0));
+}
+
+bool
+Si53xx::Si53xx::getIOVDD3V3()
+{
+	return !! this->get("IO_VDD_SEL");
 }

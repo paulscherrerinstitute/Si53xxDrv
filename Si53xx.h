@@ -44,6 +44,7 @@ namespace Si53xx {
 		public:
 			uint8_t getSelfRstMsk() const { return selfRstMsk;         }
 			int     getValue()      const { return valid ? value : -1; }
+			RegAddr getAddr()       const { return addr;               }
 
 			void
 			update(uint8_t v)
@@ -147,9 +148,12 @@ namespace Si53xx {
 
 			typedef uint64_t ValType;
 
-			virtual void readCSV(FILE *f = stdin);
-			virtual void readCSV(const char *f);
-			virtual void readCSV(const std::string &f);
+			// by default the algorithm checks if the preamble has already been written
+			// and automatically inserts it if this was not the case. By setting the
+			// flag 'noAutoPreamble' the user retains full control...
+			virtual void readCSV(FILE *f = stdin, bool noAutoPreamble = false);
+			virtual void readCSV(const char *f, bool noAutoPreamble = false);
+			virtual void readCSV(const std::string &f, bool noAutoPreamble = false);
 
 			virtual void dumpCSV(const char *f);
 			virtual void dumpCSV(const std::string &f);
@@ -179,12 +183,12 @@ namespace Si53xx {
 			Settings      settings;
 			I2cDriverShp  drv;
 			int           pageNo;
-			ValType       zdmFreq;
-                        ValType       refFreq;
-                        ValType       vcoMinFreq;
-                        ValType       vcoMaxFreq;
-                        ValType       pfdMinFreq;
-                        ValType       pfdMaxFreq;
+			ValType       finFreq;
+			ValType       refFreq;
+			ValType       vcoMinFreq;
+			ValType       vcoMaxFreq;
+			ValType       pfdMinFreq;
+			ValType       pfdMaxFreq;
 
 		private:
 			void readRange (unsigned offset, unsigned n, uint8_t *buf);
@@ -199,7 +203,7 @@ namespace Si53xx {
 			virtual ValType get(SettingShp);
 			virtual void    set(SettingShp, ValType);
 
-			virtual bool    isPllOff();
+			virtual bool    isPLLOff();
 
 			struct DividerSettings {
 				string     prefix;
@@ -207,7 +211,7 @@ namespace Si53xx {
 				SettingShp num;
 				SettingShp den;
 				SettingShp update;
-				bool       requirePllOff;
+				bool       requirePLLOff;
 			};
 
 			virtual DividerSettings getDividerSettings (const char *prefix, int idx = -1);
@@ -261,8 +265,9 @@ namespace Si53xx {
 			virtual void     sendPreamble();
 			virtual void     sendPostamble();
 
+			virtual void     setOutputMux(unsigned idx, unsigned nDivider);
 			// enable/disable 
-			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg, unsigned nDivider);
+			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg);
 
 			virtual void     showDiff(Si53xx *other, const char *fn);
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
@@ -277,7 +282,80 @@ namespace Si53xx {
 			// if ZDM is enabled;
 			virtual ValType  getZDM();
 
-			virtual void     selInput(int inp);
+			virtual void     selInput(unsigned inp);
+
+			// Parameters describing a divider; if 'den' is zero a floating-
+			// point may be used.
+			struct DivParm {
+				Si53xx::Si53xx::ValType num, den;
+				double                  r;
+
+				DivParm()
+				: num(0), den(0), r(0.0)
+				{
+				}
+
+				double get()
+				{
+					return 0 == den ? r : (double)num/(double)den;
+				}
+			};
+
+			class PLLParms;
+			typedef shared_ptr<PLLParms> PLLParmsShp;
+
+			// PLL Parameters (assuming constant bandwidth and fpfd, fvco within supported range
+			class PLLParms {
+			friend class Si53xx;
+			protected:
+				struct Key {
+					Key() {}
+				};
+				unsigned         pidx;
+				Si53xx          *obj;
+				virtual void     set(); // update registers
+			public:	
+				DivParm          P, M, MXAXB;
+				uint64_t         fin;
+
+				PLLParms(const Key &k, Si53xx *obj, unsigned pidx);
+
+				virtual void     validate(); // throws std::invalid_argument() if the params don't make sense
+
+				virtual void     get(); // update from associated Si53xx registers
+
+				virtual PLLParmsShp clone()
+				{
+					return std::make_shared<PLLParms>(*this);
+				}
+
+				static PLLParmsShp create(Si53xx *obj, unsigned pidx)
+				{
+					return std::make_shared<PLLParms>(Key(), obj, pidx);
+				}
+			};
+
+			// program the PLL; valid divider settings must have been precomputed!
+			virtual void setPLL(PLLParmsShp parms);
+
+			// bit-set of inputs
+			virtual unsigned getStatusLOS();
+			virtual bool     getStatusLOS(unsigned idx)
+			{
+				return !! (getStatusLOS() & (1<<idx));
+			}
+			virtual unsigned getStatusOOF();
+			virtual bool     getStatusOOF(unsigned idx)
+			{
+				return !! (getStatusOOF() & (1<<idx));
+			}
+			// PLL status
+			virtual bool     getStatusLOL();
+			virtual bool     getStatusHOLD();
+
+			// IO voltage: 3v3 (true), 1v8 (false)
+			virtual void     setIOVDD3V3(bool);
+			virtual bool     getIOVDD3V3();
 	};
 
 	/* Rational approximation of a floating-point number */
