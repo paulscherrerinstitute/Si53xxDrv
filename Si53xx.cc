@@ -388,12 +388,14 @@ void
 Si53xx::Si53xx::readCSV(FILE *f, bool noAutoPreamble)
 {
 char     buf[2048];
-int      off  = -1;
 uint8_t  rbuf[256];
-int      idx  = 0;
+int      off          = -1;
+int      idx          = 0;
+bool     preambleSent = false;
 
 	if ( ! noAutoPreamble && ! isPLLOff() ) {
 		this->sendPreamble();
+		preambleSent = true;
 	}
 
 	while ( fgets(buf, sizeof(buf), f) ) {
@@ -424,7 +426,7 @@ int      idx  = 0;
 		this->writeRegs( off, idx, rbuf );
 	}
 
-	if ( ! noAutoPreamble && isPLLOff() ) {
+	if ( ! noAutoPreamble && isPLLOff() && preambleSent ) {
 		this->sendPostamble();
 	}
 }
@@ -452,7 +454,7 @@ Si53xx::Si53xx::dumpCSV(FILE *f)
 uint8_t buf[4096];
 	this->readRegs(0, sizeof(buf), buf);
 	for ( int i = 0; i < sizeof(buf); i++ ) {
-		if ( fprintf(f, "0x%04x, 0x%02x\n", i, buf[i]) < 0 ) {
+		if ( fprintf(f, "0x%04X,0x%02X\n", i, buf[i]) < 0 ) {
 			throw std::runtime_error("Si53xx::dumpCSV(): file write error");
 		}
 	}	
@@ -795,7 +797,7 @@ void
 Si53xx::Si53xx::sendPostamble()
 {
 	if ( ! isPLLOff() ) {
-		throw std::logic_error("Si53xx::sendPostable: postamble has already been sent?");
+		throw std::logic_error("Si53xx::sendPostamble: postamble has already been sent?");
 	}
 	set( "BW_UPDATE_PLL", 1 );
 	set( "SOFT_RST_ALL",  1 );
@@ -854,6 +856,14 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
 
 	set( *FMT( "%sSYNC_EN",   *pre ), 1 );
 
+	ValType outEn = ( OutputConfig::OFF != drvCfg );
+
+	if ( ! outEn ) {
+		set( *FMT( "%sOE",       *pre ),   0 );
+		return;
+	}
+
+
 	ValType vsel = 0;
 	switch ( drvCfg ) {
 		case OutputConfig::LVDS25: vsel++; // fall through
@@ -869,14 +879,15 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
 	set( *FMT( "%sVDD_SEL_EN",   *pre ), 1    );
 	set( *FMT( "%sVDD_SEL",      *pre ), vsel );
 
-	ValType outEn = ( OutputConfig::OFF != drvCfg );
-
-	set( *FMT( "%sOE",       *pre ),   outEn );
-	set( *FMT( "%sPDN",      *pre ), ! outEn );
-
 	if ( 0 == get( *FMT( "R%d%s_REG", idx, (alt ? "A" : "") ) ) ) {
 		this->setRDivider( idx, alt, 2 );
 	}
+
+	// changing the PDN state seems to always reset
+	// OE, so we write OE last.
+
+	set( *FMT( "%sPDN",      *pre ), ! outEn );
+	set( *FMT( "%sOE",       *pre ),   outEn );
 }
 			
 void
