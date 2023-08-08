@@ -47,7 +47,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     sendPreamble() except+
       void     sendPostamble() except+
 
-      void     setZDM(uint64_t, unsigned, unsigned) except+
+      void     setZDM(uint64_t, unsigned, unsigned, MOutputConfig) except+
       void     setZDM(bool) except+
       bool     getZDM() except+
       bool     isPLLOff() except+
@@ -66,6 +66,8 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       bool     getStatusHOLD() except+
       void     setIOVDD3V3(bool) except+
       bool     getIOVDD3V3() except+
+      void     reset(bool) except+
+      void     flushCache() except+
 
 cpdef enum OutputConfig:
   OFF    = <int>off
@@ -154,13 +156,11 @@ cdef class SI5395:
     def selInput(self, inp):
       self.c_cls.selInput( inp )
 
-    def setZDM(self, hzOrBool, inpIdx = None, nDivIdx = None ):
-      if ( inpIdx is None ) and  (nDivIdx is None):
+    def setZDM(self, hzOrBool, inputSel = None, rDivider = 2, OutputConfig outputCfg=OutputConfig.LVDS33):
+      if ( inputSel is None ):
         self.c_cls.setZDM( hzOrBool )
-      elif not ( inpIdx is None ) and not (nDivIdx is None):
-        self.c_cls.setZDM( hzOrBool, inpIdx, nDivIdx )
       else:
-        raise TypeError("setZDM; illegal arguments")
+        self.c_cls.setZDM( hzOrBool, inputSel, rDivider, <MOutputConfig>outputCfg )
 
     def getZDM(self):
       return self.c_cls.getZDM()
@@ -204,3 +204,9 @@ cdef class SI5395:
       if ( not wasOff ):
         self.sendPostamble()
       return False
+
+    def reset(self, hard = True):
+      self.c_cls.reset( hard )
+
+    def flushCache(self):
+      self.c_cls.flushCache()

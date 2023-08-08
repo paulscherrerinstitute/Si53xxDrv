@@ -1,5 +1,5 @@
 
-CXXFLAGS=-g -fpic
+CXXFLAGS=-g -fpic -std=c++11
 
 SRCS=Si53xx.cc Si5395Settings.cc Si5395.cc pysi5395.cc TstDrv.cc Si53xxI2c.cc
 

@@ -11,7 +11,8 @@ Reg::Reg(RegAddr addr)
 : addr      ( addr ),
   selfRstMsk( 0 ),
   value     ( 0 ),
-  valid     ( false )
+  valid     ( false ),
+  cacheable ( true  )
 {
 }
 
@@ -85,9 +86,24 @@ Reg::addUser(const Setting *s)
 	this->users.push_back( s );
 
 	// maybe we have to add to the self-clearing mask?
-	if ( s->getAccess() == Access::SelfClear ) {
-		uint8_t m = (s->toMask() >> i);
-		this->selfRstMsk |= m;
+	switch ( s->getAccess() ) {
+		case Access::SelfClear:
+		{
+			uint8_t m = (s->toMask() >> i);
+			this->selfRstMsk |= m;
+		}
+		break;
+		// unfortunately, volatile status registers are not marked as such
+		// so we'd have to sift through all the settings manually; for now
+		// just treat all RO bits as non-cacheable
+		case Access::RO:
+		{
+			this->cacheable = false;
+		}
+		break;
+
+		default:
+		break;
 	}
 }
 
@@ -283,6 +299,7 @@ Si53xx::Si53xx::writeRange(unsigned offset, unsigned n, uint8_t *buf)
 Si53xx::Si53xx::ValType
 Si53xx::Si53xx::get(const std::string &k)
 {
+printf("Get %s\n", k.c_str());
 	return this->get( this->at( k ) );
 }
 
@@ -292,6 +309,7 @@ Si53xx::Si53xx::get(SettingShp s)
 	uint8_t    buf[sizeof(ValType) + 1];
 
 	int        len = s->getAddrs().size();
+printf("size: %d\n", len);
 
 	if ( s->isContiguous() ) {
 		this->readRegs( s->getAddrs()[0], len, buf );
@@ -307,6 +325,7 @@ Si53xx::Si53xx::get(SettingShp s)
 		v = (v << 8 ) | buf[i];
 	}
 	v &= s->toMask();
+printf("mask: 0x%x, left: %d, right: %d\n", s->toMask(), s->getLeft(), s->getRight());
 	return v >> s->getRight();
 }
 
@@ -1000,22 +1019,27 @@ struct DivParm {
 	}
 };
 
-class ZDMParms;
+class ZDMPLLParms;
 
-typedef std::shared_ptr<ZDMParms> ZDMParmsShp;
+typedef std::shared_ptr<ZDMPLLParms> ZDMPLLParmsShp;
 
-class ZDMParms : public Si53xx::Si53xx::PLLParms {
+class ZDMPLLParms : public Si53xx::Si53xx::PLLParms {
 protected:
 	unsigned nidx;
+        unsigned rdiv;
 public:
 	Si53xx::Si53xx::DivParm N;
 
-	ZDMParms(const Key &k, Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
+	ZDMPLLParms(const Key &k, Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx, unsigned rdiv)
 	: Si53xx::Si53xx::PLLParms( k, obj, pidx ),
-	  nidx( nidx )
+	  nidx( nidx ),
+	  rdiv( rdiv )
 	{
 		if ( pidx > 2 ) {
-			throw std::invalid_argument("Si53xx::ZDMParms: invalid input (must be < 3)");
+			throw std::invalid_argument("Si53xx::ZDMPLLParms: invalid input (must be < 3)");
+		}
+		if ( (rdiv & 1) && (rdiv > (1<<25)) ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms: invalid rDivider (must be even and <= 2**25)");
 		}
 	}
 
@@ -1028,36 +1052,49 @@ public:
 
 	virtual void set()
 	{
+		unsigned fbpidx = 3;
 		Si53xx::Si53xx::PLLParms::set();
 		if ( N.den > 0 ) {
 			obj->setNDivider    ( nidx,   N.num,      N.den );
 		} else {
 			obj->setNDivider    ( nidx,   N.r     );
 		}
+		// copy settings from input to feedback-input
+		if ( P.den > 0 ) {
+			obj->setPDivider    ( fbpidx,   P.num,      P.den );
+		} else {
+			obj->setPDivider    ( fbpidx,   P.r );
+		}
+		const char *f;
+		f = "OOF%d_DIV_SEL";
+		obj->set( *FMT( f, fbpidx ), obj->get( *FMT( f, pidx ) ) );
+
+		f = "OOF%d_RATIO_REF";
+		obj->set( *FMT( f, fbpidx ), obj->get( *FMT( f, pidx ) ) );
 	}
 
 	virtual Si53xx::Si53xx::PLLParmsShp clone()
 	{
-		return std::make_shared<ZDMParms>(*this);
+		return std::make_shared<ZDMPLLParms>(*this);
 	}
 	
-	static ZDMParmsShp create(Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx)
+	static ZDMPLLParmsShp create(Si53xx::Si53xx *obj, unsigned pidx, unsigned nidx, unsigned rdiv)
 	{
-		return std::make_shared<ZDMParms>(Key(), obj, pidx, nidx);
+		return std::make_shared<ZDMPLLParms>(Key(), obj, pidx, nidx, rdiv);
 	}
 
 	virtual void validate()
 	{
 		PLLParms::validate();
 		if ( 1 != N.den ) {
-			throw std::invalid_argument("Si53xx::ZDMParms::validate: min. N not integer");
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. N not integer");
 		}
 		if ( 1 != P.den ) {
-			throw std::invalid_argument("Si53xx::ZDMParms::validate: min. P not integer");
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. P not integer");
 		}
 		// ignore uint64 overflow
-		if ( P.num * N.num * 2 * M.den != 5 * M.num ) {
-			throw std::invalid_argument("Si53xx::ZDMParms::validate: invalid divider combination for ZDM mode!");
+		if ( P.num * N.num * rdiv * M.den != 5 * M.num ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: invalid divider combination for ZDM mode!");
 		}
 	}
 };
@@ -1084,50 +1121,41 @@ void
 Si53xx::Si53xx::PLLParms::set()
 {
 	if ( P.den > 0 ) {
-printf("Setting P%d %ld/%ld\n", pidx, P.num, P.den);
 		obj->setPDivider    ( pidx,   P.num,      P.den );
 	} else {
-printf("Setting P%d %g\n", pidx, P.r);
 		obj->setPDivider    ( pidx,   P.r );
 	}
 	if ( M.den > 0 ) {
-printf("Setting M %ld/%ld\n", M.num, M.den);
 		obj->setMDivider    (         M.num,      M.den );
 	} else {
-printf("Setting M %g\n",  M.r);
 		obj->setMDivider    (         M.r     );
 	}
 	if ( MXAXB.den > 0 ) {
-printf("Setting MXAXB %ld/%ld\n", MXAXB.num, MXAXB.den);
 		obj->setMXAXBDivider(         MXAXB.num,  MXAXB.den );
 	} else {
-printf("Setting MXAXB %g\n", MXAXB.r);
 		obj->setMXAXBDivider(         MXAXB.r );
 	}
 
 	obj->set( "IN_SEL", pidx );
 
 	// assume OOF reference is XAXB
-    double oofRefFreq = (double)obj->refFreq/(double)(1 << obj->get("OOFXO_DIV_SEL"));
-printf("fin %g, OOF ref freq %g\n", fin, oofRefFreq);
+	double oofRefFreq = (double)obj->refFreq/(double)(1 << obj->get("OOFXO_DIV_SEL"));
 
-    double oofDivLd   = round( log2( (double)fin/oofRefFreq ) );
+	double oofDivLd   = round( log2( (double)fin/oofRefFreq ) );
 
-    ValType  oofDiv   = (1 << (ValType )oofDivLd);
+	ValType  oofDiv   = (1 << (ValType )oofDivLd);
     
 	obj->set( *FMT( "OOF%d_DIV_SEL", pidx ), oofDivLd );
 
 	double oofRatio   = ( (double)(1<<24) ) * (double)fin / (double)oofDiv / oofRefFreq;
-printf("OOF ratio %g\n", oofRatio);
 
 	obj->set( *FMT( "OOF%d_RATIO_REF", pidx ), oofRatio );
 
 	double fpfd       = (double) fin / P.get(); 
-    double fvco       = (double) fin / P.get() * 5.0 * M.get();
-printf("fpfd %g, fvco %g\n", fpfd, fvco);
+	double fvco       = (double) fin / P.get() * 5.0 * M.get();
 
 	// magial time constant: 0.01seconds (extrapolated from cbpro)
-    double holdCyc    = ((double)(1<<24)) / 0.01 / fpfd;
+	double holdCyc    = ((double)(1<<24)) / 0.01 / fpfd;
 
 	obj->set( "HOLD_15M_CYC_COUNT", (ValType)holdCyc);
 
@@ -1153,6 +1181,8 @@ Si53xx::Si53xx::PLLParms::validate()
 	double fvco = fpfd * M.get() * 5.0;
 
 	if ( fvco  < obj->vcoMinFreq ) {
+printf("M: %g\n", M.get());
+printf("P: %g\n", P.get());
 		throw std::invalid_argument("Si53xx::PLLParms::validate: min. VCO violation by M divider");
 	}
 	if ( fvco  > obj->vcoMaxFreq ) {
@@ -1167,28 +1197,29 @@ Si53xx::Si53xx::PLLParms::validate()
 //
 // The following problem would have to be solved:
 //
-//  fvco_min <= fin * 2 * Nden/Nnum  <= fvco_max
+//  fvco_min <= fin * R * Nden/Nnum  <= fvco_max
 //
 //  fpfd_min <= fin * Pden/Pnum      <= fpfd_max
 //
-//     Mnum/Mden = 2/5 * Pnum * Nnum / Pden / Nden
+//     Mnum/Mden = R/5 * Pnum * Nnum / Pden / Nden
 //
 //  with all the numbers remaining within their valid range
 //
 
 void
-Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
+Si53xx::Si53xx::setZDM(ZDMParms *prm)
 {
-	ZDMParmsShp np = ZDMParms::create( this, inp, ndiv );
+	ZDMPLLParmsShp np = ZDMPLLParms::create( this, prm->inputSel, prm->nDividerSel, prm->rDivider );
 
-	ValType p,n, p5 = 0, n5 = 0, r = 2;
+	ValType  p,n, p5 = 0, n5 = 0, r = prm->rDivider;
+	uint64_t hz = prm->finHz;
 
 	// try to find integer dividers with the constraint that fvco remain
 	// within the 'known' range.
 	//   fvco = fin / P * 5 * M      (fixed 5 divider present)
-	//   fout = fin (zdm) = fvco/2/N (min. R divider is 2    )
+	//   fout = fin (zdm) = fvco/r/N (min. R divider is 2    )
 	//
-	//   thus for integer ratios:  5*M = 2 * N * P
+	//   thus for integer ratios:  5*M = r * N * P
 
 	n  = this->vcoMaxFreq/hz/r; 
 	if ( hz*n*r < this->vcoMinFreq ) {
@@ -1203,9 +1234,9 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 		np->P.num = p;
 		np->P.den = 1;
 		if ( 0 == ( np->P.num % 5 ) ) {
-			// 5 divides P => M = 2*N*p5
+			// 5 divides P => M = r*N*p5
 			p5 = p/5;
-			np->M.num = 2*n*p5;
+			np->M.num = r*n*p5;
 			np->M.den = 1;
 			np->N.num = n;
 			np->N.den = 1;
@@ -1240,7 +1271,9 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 
 	if ( 0 == p5 && 0 == n5 ) {
 		/* no multiple of 5 found; must use fractional divider;
-		 * use on M. Note the 0 == p5 test also covers the
+		 * use on M. This is not a problem, in particular because
+		 * M is irrelevant in ZDM mode.
+		 * Note the 0 == p5 test also covers the
 		 * case when no integer P divider at all is found...
 		 */
 		np->M.num = r * np->N.num * np->P.num;
@@ -1254,7 +1287,10 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 
 	this->setPLL( np );
 
-	this->selInput( inp );
+	// set input and feedback output routing as well as the feedback output R divider 
+	this->selInput( prm->inputSel );
+	this->setOutputMux( prm->outputSel, prm->nDividerSel );
+	this->setOutput( prm->outputSel, prm->outputDrvCfg, prm->rDivider, prm->outputSelAlt );
 }
 
 void
@@ -1365,8 +1401,7 @@ Si53xx::Si53xx::init()
 unsigned
 Si53xx::Si53xx::getStatusLOS()
 {
-	// max. 4 inputs; all others bits set
-	return (-16) | this->get("LOS");
+	return this->get("LOS");
 }
 
 bool
@@ -1378,8 +1413,7 @@ Si53xx::Si53xx::getStatusLOL()
 unsigned
 Si53xx::Si53xx::getStatusOOF()
 {
-	// max. 4 inputs; all others bits set
-	return (-16) | this->get("OOF");
+	return this->get("OOF");
 }
 
 bool
@@ -1398,4 +1432,22 @@ bool
 Si53xx::Si53xx::getIOVDD3V3()
 {
 	return !! this->get("IO_VDD_SEL");
+}
+
+void
+Si53xx::Si53xx::flushCache()
+{
+auto it  = this->regs.begin();
+auto ite = this->regs.end();
+	while ( it != ite ) {
+		(*it).invalidate();
+		++it;
+	}
+}
+
+void
+Si53xx::Si53xx::reset(bool hard)
+{
+	this->set( hard ? "HARD_RST" : "SOFT_RST_ALL", 1 );
+	this->flushCache();
 }

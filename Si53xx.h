@@ -39,12 +39,13 @@ namespace Si53xx {
 			uint8_t                  selfRstMsk;
 			uint8_t                  value;
 			bool                     valid;
+                        bool                     cacheable;
 			vector<const Setting*>   users;
 
 		public:
-			uint8_t getSelfRstMsk() const { return selfRstMsk;         }
-			int     getValue()      const { return valid ? value : -1; }
-			RegAddr getAddr()       const { return addr;               }
+			uint8_t getSelfRstMsk() const { return selfRstMsk;                      }
+			int     getValue()      const { return valid && cacheable ? value : -1; }
+			RegAddr getAddr()       const { return addr;                            }
 
 			void
 			update(uint8_t v)
@@ -52,10 +53,16 @@ namespace Si53xx {
 				value = v;
 				valid = true;
 			}
+
+			void
+			invalidate()
+			{
+				valid = false;
+			}
 	};
 
 	typedef shared_ptr<Setting> SettingShp;
-    typedef vector<SettingShp>  SettingVec;
+	typedef vector<SettingShp>  SettingVec;
 
 	class Setting {
 		private:
@@ -101,7 +108,7 @@ namespace Si53xx {
 			toMask() const
 			{
 				uint64_t m = (((uint64_t)1) << this->left);
-				return m | (m - ((uint64_t)1) << this->right);
+				return m | (m - ( ((uint64_t)1) << this->right ) );
 			}
 
 			const RegAddrVec &
@@ -282,9 +289,29 @@ namespace Si53xx {
 			virtual void     showDiff(Si53xx *other, const char *fn);
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
 
+			struct ZDMParms {
+				uint64_t     finHz;
+				unsigned     inputSel;
+				unsigned     nDividerSel;
+				unsigned     outputSel;
+				bool         outputSelAlt;
+				unsigned     rDivider; // must be even
+				OutputConfig outputDrvCfg;
+
+				ZDMParms(ValType finHz)
+				: finHz       (finHz),
+				  inputSel    (0),
+				  nDividerSel (0),
+				  outputSel   (0),
+				  outputSelAlt(true),
+				  rDivider    (2),
+				  outputDrvCfg(OutputConfig::OFF)
+				{}
+			};
+
 			// Program the PLL for ZDM mode and frequency 'hz' on input 'inp'
 			// using N divider 'nidx'
-			virtual void     setZDM(ValType hz, unsigned inp, unsigned nidx = 0);
+			virtual void     setZDM(ZDMParms *p);
 
 			// enable/disables ZDM
 			virtual void     setZDM(bool enabled);
@@ -366,6 +393,10 @@ namespace Si53xx {
 			// IO voltage: 3v3 (true), 1v8 (false)
 			virtual void     setIOVDD3V3(bool);
 			virtual bool     getIOVDD3V3();
+
+			virtual void     flushCache();
+
+			virtual void     reset(bool hard = true);
 	};
 
 	/* Rational approximation of a floating-point number */
