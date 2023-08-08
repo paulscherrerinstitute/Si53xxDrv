@@ -1084,18 +1084,24 @@ void
 Si53xx::Si53xx::PLLParms::set()
 {
 	if ( P.den > 0 ) {
+printf("Setting P%d %ld/%ld\n", pidx, P.num, P.den);
 		obj->setPDivider    ( pidx,   P.num,      P.den );
 	} else {
+printf("Setting P%d %g\n", pidx, P.r);
 		obj->setPDivider    ( pidx,   P.r );
 	}
 	if ( M.den > 0 ) {
+printf("Setting M %ld/%ld\n", M.num, M.den);
 		obj->setMDivider    (         M.num,      M.den );
 	} else {
+printf("Setting M %g\n",  M.r);
 		obj->setMDivider    (         M.r     );
 	}
 	if ( MXAXB.den > 0 ) {
+printf("Setting MXAXB %ld/%ld\n", MXAXB.num, MXAXB.den);
 		obj->setMXAXBDivider(         MXAXB.num,  MXAXB.den );
 	} else {
+printf("Setting MXAXB %g\n", MXAXB.r);
 		obj->setMXAXBDivider(         MXAXB.r );
 	}
 
@@ -1103,19 +1109,22 @@ Si53xx::Si53xx::PLLParms::set()
 
 	// assume OOF reference is XAXB
     double oofRefFreq = (double)obj->refFreq/(double)(1 << obj->get("OOFXO_DIV_SEL"));
+printf("fin %g, OOF ref freq %g\n", fin, oofRefFreq);
 
     double oofDivLd   = round( log2( (double)fin/oofRefFreq ) );
 
     ValType  oofDiv   = (1 << (ValType )oofDivLd);
     
-	obj->set( *FMT( "OOF%d_DIV_SEL", pidx ), oofDiv );
+	obj->set( *FMT( "OOF%d_DIV_SEL", pidx ), oofDivLd );
 
 	double oofRatio   = ( (double)(1<<24) ) * (double)fin / (double)oofDiv / oofRefFreq;
+printf("OOF ratio %g\n", oofRatio);
 
 	obj->set( *FMT( "OOF%d_RATIO_REF", pidx ), oofRatio );
 
 	double fpfd       = (double) fin / P.get(); 
     double fvco       = (double) fin / P.get() * 5.0 * M.get();
+printf("fpfd %g, fvco %g\n", fpfd, fvco);
 
 	// magial time constant: 0.01seconds (extrapolated from cbpro)
     double holdCyc    = ((double)(1<<24)) / 0.01 / fpfd;
@@ -1172,7 +1181,7 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 {
 	ZDMParmsShp np = ZDMParms::create( this, inp, ndiv );
 
-	ValType p,n, p5 = 0, n5 = 0;
+	ValType p,n, p5 = 0, n5 = 0, r = 2;
 
 	// try to find integer dividers with the constraint that fvco remain
 	// within the 'known' range.
@@ -1181,8 +1190,8 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 	//
 	//   thus for integer ratios:  5*M = 2 * N * P
 
-	n  = this->vcoMaxFreq/hz/2; 
-	if ( hz*n*2 < this->vcoMinFreq ) {
+	n  = this->vcoMaxFreq/hz/r; 
+	if ( hz*n*r < this->vcoMinFreq ) {
 		throw std::runtime_error("Si53xx::setZDM: unable to find all-integer PLL configuration");
 		// frequency probably too high; must resort to fractional N
 	}
@@ -1210,7 +1219,7 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 
 	if ( 0 == p5 ) {
 		// P not divisible by 5; try to find an N. Better for small fin
-		while ( hz*n*2 >= this->vcoMinFreq && 0 == n5 ) {
+		while ( hz*n*r >= this->vcoMinFreq && 0 == n5 ) {
 			// record a valid integer N
 			np->N.num = n;
 			np->N.den = 1;
@@ -1220,7 +1229,7 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 				np->N.num = n;
 				np->N.den = 1;
 				// np->P.den != 0 was tested above
-				np->M.num = 2 * n5 * np->P.num;
+				np->M.num = r * n5 * np->P.num;
 				np->M.den = 1;
 			}
 			n--;
@@ -1234,12 +1243,12 @@ Si53xx::Si53xx::setZDM(uint64_t hz, unsigned inp, unsigned ndiv)
 		 * use on M. Note the 0 == p5 test also covers the
 		 * case when no integer P divider at all is found...
 		 */
-		np->M.num = 2 * np->N.num * np->P.num;
+		np->M.num = r * np->N.num * np->P.num;
 		np->M.den = 5;
 	}
 
 	// program the reference divider
-	np->MXAXB.r = (double)hz * (double)np->N.num/(double)np->N.den * 2.0 / this->refFreq;
+	np->MXAXB.r = (double)hz * (double)np->N.num/(double)np->N.den * (double)r / this->refFreq;
 
 	np->fin = hz;
 
