@@ -16,8 +16,8 @@ main(int argc, char **argv)
 
 		sidflt.setZDM( true );
 		sidflt.selInput( 2 );
-		sidflt.setOutput( 9, false, OutputConfig::LVDS33 );
-		sidflt.setOutput( 9, true , OutputConfig::LVDS33 );
+		sidflt.setOutput( 9, OutputConfig::LVDS33, 2, false );
+		sidflt.setOutput( 9, OutputConfig::LVDS33, 2, true );
 		sidflt.setOutputMux( 9, 0 );
 		sidflt.setPDivider( 2, 75, 1 );
 		sidflt.setPDivider( 3, 75, 1 );

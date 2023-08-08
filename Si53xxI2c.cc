@@ -62,7 +62,6 @@ I2cDev::rd(uint8_t off, unsigned n, uint8_t *buf)
 void
 I2cDev::wr(uint8_t off, unsigned n, uint8_t *buf)
 {
-	// write must be a single 'write' syscall;
 	// gathered write (via I2C_RDWR or writev)
 	// does not work...
 	if ( n > 4096 ) {

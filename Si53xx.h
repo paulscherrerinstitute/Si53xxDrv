@@ -207,8 +207,6 @@ namespace Si53xx {
 			virtual ValType get(SettingShp);
 			virtual void    set(SettingShp, ValType);
 
-			virtual bool    isPLLOff();
-
 			struct DividerSettings {
 				string     prefix;
 				int        idx;
@@ -230,6 +228,8 @@ namespace Si53xx {
 			virtual void    setDivider(DividerSettings &s, double val);
 
 		public:
+			virtual bool    isPLLOff();
+
 			virtual ValType get(const std::string &k);
 			virtual void    set(const std::string &k, ValType v);
 			virtual void    ormsk (const std::string &k, ValType m);
@@ -263,15 +263,21 @@ namespace Si53xx {
 
 			// R-divider value must be even > 0;
 			// set 'alt' for R0A/R9A.
-			virtual void     setRDivider(unsigned idx, bool alt, unsigned val);
-			virtual unsigned getRDivider(unsigned idx, bool alt);
+			virtual void     setRDivider(unsigned idx, unsigned val, bool alt = false);
+			virtual unsigned getRDivider(unsigned idx, bool alt = false);
 
 			virtual void     sendPreamble();
 			virtual void     sendPostamble();
 
 			virtual void     setOutputMux(unsigned idx, unsigned nDivider);
-			// enable/disable 
-			virtual void     setOutput(unsigned idx, bool alt, OutputConfig drvCfg);
+			virtual unsigned getOutputMux(unsigned idx, bool alt = false);
+
+			// rdiv is ignored (not programmed) when switching the output OFF!
+			virtual void     setOutput(unsigned idx, OutputConfig drvCfg, unsigned rdiv = 2, bool alt = false);
+			virtual void     setOutputOff(unsigned idx, bool alt = false)
+			{
+				this->setOutput( idx, OutputConfig::OFF, alt );
+			}
 
 			virtual void     showDiff(Si53xx *other, const char *fn);
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);

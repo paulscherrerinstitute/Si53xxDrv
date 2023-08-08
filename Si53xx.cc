@@ -884,8 +884,17 @@ Si53xx::Si53xx::setOutputMux(unsigned idx, unsigned nDivider)
 	}
 }
 
+unsigned
+Si53xx::Si53xx::getOutputMux(unsigned idx, bool alt)
+{
+	chkAlt( idx, alt, "Si53xx::getOutputMux");
+
+	// should only be needed for diagnostics; the 'A' outputs must be retrieved manually
+	return get( *FMT( "OUT%u%s_MUX_SEL", idx, (alt ? "A" : "") ) );
+}
+
 void
-Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
+Si53xx::Si53xx::setOutput(unsigned idx, OutputConfig drvCfg, unsigned rdiv, bool alt)
 {
 	chkAlt( idx, alt, "Si53xx::SetOutput" );
 	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
@@ -898,7 +907,6 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
 		set( *FMT( "%sOE",       *pre ),   0 );
 		return;
 	}
-
 
 	ValType vsel = 0;
 	switch ( drvCfg ) {
@@ -916,13 +924,17 @@ Si53xx::Si53xx::setOutput(unsigned idx, bool alt, OutputConfig drvCfg)
 	set( *FMT( "%sVDD_SEL",      *pre ), vsel );
 
 	if ( 0 == get( *FMT( "R%d%s_REG", idx, (alt ? "A" : "") ) ) ) {
-		this->setRDivider( idx, alt, 2 );
+		this->setRDivider( idx, 2, alt );
 	}
 
 	// changing the PDN state seems to always reset
-	// OE, so we write OE last.
+	// OE, so we write OE last. BTW: changing PDN
+	// also resets the RDIV to 0, apparently.
 
 	set( *FMT( "%sPDN",      *pre ), ! outEn );
+
+	setRDivider( idx, rdiv, alt );
+
 	set( *FMT( "%sOE",       *pre ),   outEn );
 }
 			
@@ -1294,7 +1306,17 @@ Si53xx::Si53xx::getRDivider(unsigned idx, bool alt)
 	if ( this->get( *FMT( "OUT%u%s_RDIV_FORCE2", idx, (alt ? "A" : "") ) ) ) {
 		return 2;
 	}
-	return (this->get( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ) ) + 1) << 1;
+
+	unsigned rv = this->get( *FMT( "R%u%s_REG", idx, (alt ? "A" : "" ) ) );
+
+	if ( 0 == rv ) {
+		// if force2 is off and no value is set the divider
+		// is not initialized!
+		// Communicate by returning 0
+		return 0;
+	}
+
+	return (rv + 1) << 1;
 }
 
 void
@@ -1312,7 +1334,7 @@ Si53xx::Si53xx::andmsk(const std::string &k, ValType m)
 }
 
 void
-Si53xx::Si53xx::setRDivider(unsigned idx, bool alt, unsigned val)
+Si53xx::Si53xx::setRDivider(unsigned idx, unsigned val, bool alt)
 {
 	chkAlt(idx, alt, "Si53xx::setRDivider");
 	if ( 0 == val || (val & 1) ) {

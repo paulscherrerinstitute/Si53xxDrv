@@ -35,8 +35,8 @@ cdef extern from "Si5395.h" namespace "Si53xx":
 
       void     getPDivider(unsigned idx, ValType *num, ValType *den) except+
       void     setPDivider(unsigned idx, ValType num, ValType den) except+
-      unsigned getRDivider(unsigned idx, bool alt) except+
-      void     setRDivider(unsigned idx, bool alt, ValType num) except+
+      unsigned getRDivider(unsigned idx, bool) except+
+      void     setRDivider(unsigned idx, ValType num, bool) except+
 
       void     getMDivider( ValType *num, ValType *den) except+
       void     setMDivider(ValType num, ValType den) except+
@@ -50,11 +50,13 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     setZDM(uint64_t, unsigned, unsigned) except+
       void     setZDM(bool) except+
       bool     getZDM() except+
+      bool     isPLLOff() except+
 
       void     selInput(unsigned) except+
 
       void     setOutputMux(unsigned, unsigned) except+
-      void     setOutput(unsigned, bool, MOutputConfig) except+
+      unsigned getOutputMux(unsigned, bool) except+
+      void     setOutput(unsigned, MOutputConfig, unsigned, bool) except+
 
       unsigned getStatusLOS() except+
       unsigned getStatusOOF() except+
@@ -74,12 +76,14 @@ cpdef enum OutputConfig:
 
 cdef class SI5395:
     cdef Si5395 c_cls
+    cdef list   nest
 
     def __init__(self, busn=None, i2cAddr=0x68):
       if ( not busn is None ):
         self.c_cls = Si5395( busn, i2cAddr )
       else:
         self.c_cls = Si5395()
+      self.nest = []
 
     def get(self, key):
       v = self.c_cls.get( key )
@@ -126,11 +130,11 @@ cdef class SI5395:
       self.c_cls.getMDivider(&n, &d)
       return n,d
 
-    def getRDivider(self, idx, alt):
+    def getRDivider(self, idx, alt = False):
       return self.c_cls.getRDivider(idx, alt)
 
-    def setRDivider(self, idx, alt, val):
-      self.c_cls.setRDivider(idx, alt, val)
+    def setRDivider(self, idx, val, alt=False):
+      self.c_cls.setRDivider(idx, val, alt)
 
     def setMDivider(self, num, den):
       self.c_cls.setMDivider(num, den)
@@ -144,8 +148,8 @@ cdef class SI5395:
     def setOutputMux(self, idx, nDivider):
       self.c_cls.setOutputMux( idx, nDivider )
 
-    def setOutput(self, idx, alt, OutputConfig cfg):
-      self.c_cls.setOutput( idx, alt, <MOutputConfig>cfg )
+    def setOutput(self, idx, OutputConfig cfg, rdiv, alt = False):
+      self.c_cls.setOutput( idx, <MOutputConfig>cfg, rdiv, alt )
 
     def selInput(self, inp):
       self.c_cls.selInput( inp )
@@ -184,3 +188,19 @@ cdef class SI5395:
 
     def getIOVDD3V3(self):
       return self.c_cls.getIOVDD3V3()
+
+    def isPLLOff(self):
+      return self.c_cls.isPLLOff()
+
+    def __enter__(self):
+      wasOff = self.isPLLOff()
+      if ( not wasOff ):
+        self.sendPreamble()
+      self.nest.append( wasOff )
+      return self
+
+    def __exit__(self, *args):
+      wasOff = self.nest.pop()
+      if ( not wasOff ):
+        self.sendPostamble()
+      return False
