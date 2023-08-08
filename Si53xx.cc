@@ -299,7 +299,6 @@ Si53xx::Si53xx::writeRange(unsigned offset, unsigned n, uint8_t *buf)
 Si53xx::Si53xx::ValType
 Si53xx::Si53xx::get(const std::string &k)
 {
-printf("Get %s\n", k.c_str());
 	return this->get( this->at( k ) );
 }
 
@@ -309,7 +308,6 @@ Si53xx::Si53xx::get(SettingShp s)
 	uint8_t    buf[sizeof(ValType) + 1];
 
 	int        len = s->getAddrs().size();
-printf("size: %d\n", len);
 
 	if ( s->isContiguous() ) {
 		this->readRegs( s->getAddrs()[0], len, buf );
@@ -325,7 +323,6 @@ printf("size: %d\n", len);
 		v = (v << 8 ) | buf[i];
 	}
 	v &= s->toMask();
-printf("mask: 0x%x, left: %d, right: %d\n", s->toMask(), s->getLeft(), s->getRight());
 	return v >> s->getRight();
 }
 
@@ -1181,8 +1178,6 @@ Si53xx::Si53xx::PLLParms::validate()
 	double fvco = fpfd * M.get() * 5.0;
 
 	if ( fvco  < obj->vcoMinFreq ) {
-printf("M: %g\n", M.get());
-printf("P: %g\n", P.get());
 		throw std::invalid_argument("Si53xx::PLLParms::validate: min. VCO violation by M divider");
 	}
 	if ( fvco  > obj->vcoMaxFreq ) {
