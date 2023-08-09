@@ -1,8 +1,7 @@
 /* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.c) -- DO NOT _MODIFY! */
 #include <Si53xx.h>
 namespace Si53xx {
-SettingVec Si5395Settings = {
-	Setting::mkSetting("DIE_REV", Access::RO, 3, 0, {0x000}),
+SettingVec Si5395Settings = {	Setting::mkSetting("DIE_REV", Access::RO, 3, 0, {0x000}),
 	Setting::mkSetting("PAGE", Access::RW, 7, 0, {0x001}),
 	Setting::mkSetting("PN_BASE", Access::RW, 15, 0, {0x002,0x003}),
 	Setting::mkSetting("GRADE", Access::RW, 7, 0, {0x004}),
@@ -600,7 +599,9 @@ SettingVec Si5395Settings = {
 	Setting::mkSetting("IN_CLK_VAL_TIME", Access::RW, 7, 0, {0xc08}),
 	Setting::mkSetting("AMBLE0", Access::RW, 7, 0, {0xb24}),
 	Setting::mkSetting("AMBLE1", Access::RW, 7, 0, {0xb25}),
-	Setting::mkSetting("AMBLE2", Access::RW, 7, 0, {0x540})
+	Setting::mkSetting("AMBLE2", Access::RW, 7, 0, {0x540}),
+	Setting::mkSetting("XAXB_ERR", Access::RO, 3, 3, {0x00c}),
+
 };
 
 }

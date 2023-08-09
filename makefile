@@ -38,8 +38,10 @@ Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extr
 	$(RM) $@
 	./$^ > $@
 
+# disable warning about assigning string constants to a char*;
+# the regmap header is legay C (= ill-written).
 $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
-	cat $^ | $(CXX) -o $@ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -xc -
+	cat $^ | $(CXX) -o $@ -xc++ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -Wno-write-strings -
 
 
 .PHONY: clean
