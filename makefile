@@ -38,8 +38,8 @@ Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extr
 	$(RM) $@
 	./$^ > $@
 
-$(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.c
-	cat $^ | $(CC) -o $@ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -xc -
+$(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
+	cat $^ | $(CXX) -o $@ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -xc -
 
 
 .PHONY: clean
