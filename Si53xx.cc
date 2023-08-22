@@ -28,7 +28,7 @@ class FMT {
 			va_start(ap, fmt);
 			int st = vsnprintf(this->buf, sizeof(this->buf), fmt, ap);
 			va_end(ap);
-			if ( st >= sizeof(this->buf) ) {
+			if ( st >= static_cast<int>(sizeof(this->buf)) ) {
 				throw std::range_error("FMT buffer not big enough");
 			}
 		}
@@ -39,7 +39,7 @@ class FMT {
 			va_start(ap, fmt);
 			int st = vsnprintf(this->buf, sizeof(this->buf), fmt.c_str(), ap);
 			va_end(ap);
-			if ( st >= sizeof(this->buf) ) {
+			if ( st >= static_cast<int>(sizeof(this->buf)) ) {
 				throw std::range_error("FMT buffer not big enough");
 			}
 		}
@@ -47,12 +47,12 @@ class FMT {
 
 		FMT(const FMT &orig)
 		{
-			strcpy(this->buf, orig.buf);
+			::strcpy(this->buf, orig.buf);
 		}
 
 		FMT & operator=(const FMT &orig)
 		{
-			::strcmp( this->buf, orig.buf );
+			::strcpy( this->buf, orig.buf );
 			return *this;
 		}
 
@@ -161,9 +161,9 @@ Si53xx::toAccess(const std::string &s)
 }
 
 Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
-: drv              ( drv         ),
+: params           ( p           ),
+  drv              ( drv         ),
   pageNo           ( -1          ),
-  params           ( p           ),
   finFreq          ( 0           ),
   refFreq          (    48000000 ),
   // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
@@ -406,7 +406,7 @@ Si53xx::Si53xx::readCSV(FILE *f, bool noAutoPreamble)
 char     buf[2048];
 uint8_t  rbuf[256];
 int      off          = -1;
-int      idx          = 0;
+unsigned idx          = 0;
 bool     preambleSent = false;
 
 	if ( ! noAutoPreamble && ! isPLLOff() ) {
@@ -468,7 +468,7 @@ Si53xx::Si53xx::dumpCSV(FILE *f)
 {
 uint8_t buf[4096];
 	this->readRegs(0, sizeof(buf), buf);
-	for ( int i = 0; i < sizeof(buf); i++ ) {
+	for ( unsigned i = 0; i < sizeof(buf); i++ ) {
 		if ( fprintf(f, "0x%04X,0x%02X\n", i, buf[i]) < 0 ) {
 			throw std::runtime_error("Si53xx::dumpCSV(): file write error");
 		}
@@ -777,7 +777,7 @@ static int mu64(uint64_t *p, uint64_t a, uint64_t b)
 }
 
 
-static void
+void
 Si53xx::ratapp(double x, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp)
 {
 uint64_t n2 = 0;
@@ -1098,7 +1098,7 @@ public:
 
 
 Si53xx::Si53xx::PLLParms::PLLParms(const Key &k, Si53xx *obj, unsigned pidx)
-: obj(obj), pidx(pidx), fin(0)
+: pidx(pidx), obj(obj), fin(0)
 {
 	if ( pidx > 3 ) {
 		throw std::invalid_argument("Si53xx::PLLParms: invalid input selection");

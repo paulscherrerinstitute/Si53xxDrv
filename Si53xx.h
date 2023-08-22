@@ -400,7 +400,7 @@ namespace Si53xx {
 	};
 
 	/* Rational approximation of a floating-point number */
-	static void ratapp(double n, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp);
+	void ratapp(double n, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp);
 
 }
 
