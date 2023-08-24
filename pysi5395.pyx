@@ -150,6 +150,9 @@ cdef class SI5395:
     def setOutputMux(self, idx, nDivider):
       self.c_cls.setOutputMux( idx, nDivider )
 
+    def getOutputMux(self, idx, alt = False):
+      return self.c_cls.getOutputMux( idx, alt )
+
     def setOutput(self, idx, OutputConfig cfg, rdiv, alt = False):
       self.c_cls.setOutput( idx, <MOutputConfig>cfg, rdiv, alt )
 
