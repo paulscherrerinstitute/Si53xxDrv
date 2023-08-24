@@ -1,5 +1,8 @@
-SOURCES=Si53xx.cc Si5395Settings.cc Si5395.cc pysi5395.cc TstDrv.cc Si53xxI2c.cc
-ifeq ($(wildcard /ioc/tools/driver.makefile),)
+SOURCES=Si53xx.cc Si5395Settings.cc Si5395.cc Si53xxI2c.cc TstDrv.cc
+
+ifneq ($(PSIMAKE),YES)
+
+SOURCES+=pysi5395.cc
 
 CXXFLAGS=-g -fpic -std=c++11 -Wall
 
@@ -49,14 +52,4 @@ $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
 
 clean:
 	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract)
-
-else
-
-include /ioc/tools/driver.makefile
-
-MODULE=Si53xxDrv
-
-BUILDCLASSES=Linux
-ARCH_FILTER=yocto%
-
 endif
