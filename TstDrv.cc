@@ -18,7 +18,7 @@ TstDrv::TstDrv()
 void
 TstDrv::wr(uint8_t off, unsigned n, uint8_t *buf)
 {
-	for ( int i = 0; i < n; i++ ) {
+	for ( unsigned i = 0; i < n; i++ ) {
 		if ( off == 0x01 ) {
 			this->page = *buf;
 		} else {
@@ -37,7 +37,7 @@ TstDrv::wr(uint8_t off, unsigned n, uint8_t *buf)
 void
 TstDrv::rd(uint8_t off, unsigned n, uint8_t *buf)
 {
-	for ( int i = 0; i < n; i++ ) {
+	for ( unsigned i = 0; i < n; i++ ) {
 		unsigned a = (this->page << 8) | off;
         int      v = this->regs[a].getValue();
 		if ( v < 0 ) {
@@ -54,7 +54,7 @@ TstDrv::rd(uint8_t off, unsigned n, uint8_t *buf)
 void
 TstDrv::printRegs(FILE *f)
 {
-	for (int a = 0; a < this->regs.size(); a++ ) {
+	for (unsigned a = 0; a < this->regs.size(); a++ ) {
 		int v = this->regs[a].getValue();
 		if ( v >= 0 ) {
 			fprintf(f, "0x%04X,0x%02x\n", a, v);
