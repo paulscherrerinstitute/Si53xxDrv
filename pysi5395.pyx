@@ -160,7 +160,7 @@ cdef class SI5395:
       self.c_cls.setOutput( idx, <MOutputConfig>cfg, rdiv, alt )
 
     def getOutputEnable(self, idx, alt = False):
-      self.c_cls.getOutputEnable( idx, alt )
+      return self.c_cls.getOutputEnable( idx, alt )
 
     def setOutputEnable(self, idx, val, alt = False):
       self.c_cls.setOutputEnable( idx, val, alt )
