@@ -1,6 +1,8 @@
+ifneq ($(wildcard /ioc/tools/driver.makefile),)
 PSIMAKE=YES
-include /ioc/tools/driver.makefile
 
+include /ioc/tools/driver.makefile
+endif
 
 include $(dir $(abspath $(firstword $(MAKEFILE_LIST))))/makefile
 
