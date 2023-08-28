@@ -57,6 +57,8 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     setOutputMux(unsigned, unsigned) except+
       unsigned getOutputMux(unsigned, bool) except+
       void     setOutput(unsigned, MOutputConfig, unsigned, bool) except+
+      bool     getOutputEnable(unsigned, bool) except+
+      void     setOutputEnable(unsigned, bool, bool) except+
 
       unsigned getStatusLOS() except+
       unsigned getStatusOOF() except+
@@ -68,6 +70,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       bool     getIOVDD3V3() except+
       void     reset(bool) except+
       void     flushCache() except+
+      void     syncRDividers() except+
 
 cpdef enum OutputConfig:
   OFF    = <int>off
@@ -156,6 +159,12 @@ cdef class SI5395:
     def setOutput(self, idx, OutputConfig cfg, rdiv, alt = False):
       self.c_cls.setOutput( idx, <MOutputConfig>cfg, rdiv, alt )
 
+    def getOutputEnable(self, idx, alt = False):
+      self.c_cls.getOutputEnable( idx, alt )
+
+    def setOutputEnable(self, idx, val, alt = False):
+      self.c_cls.setOutputEnable( idx, val, alt )
+
     def selInput(self, inp):
       self.c_cls.selInput( inp )
 
@@ -213,3 +222,6 @@ cdef class SI5395:
 
     def flushCache(self):
       self.c_cls.flushCache()
+
+    def syncRDividers(self):
+      self.c_cls.syncRDividers()

@@ -909,10 +909,24 @@ Si53xx::Si53xx::getOutputMux(unsigned idx, bool alt)
 	return get( *FMT( "OUT%u%s_MUX_SEL", idx, (alt ? "A" : "") ) );
 }
 
+bool
+Si53xx::Si53xx::getOutputEnable(unsigned idx, bool alt)
+{
+	chkAlt( idx, alt, "Si53xx::getOutputEnable" );
+	return get( *FMT("OUT%u%s_OE", idx, (alt ? "A" : "") ) );
+}
+
+void
+Si53xx::Si53xx::setOutputEnable(unsigned idx, bool val, bool alt)
+{
+	chkAlt( idx, alt, "Si53xx::setOutputEnable" );
+	set( *FMT("OUT%u%s_OE", idx, (alt ? "A" : "") ), val );
+}
+
 void
 Si53xx::Si53xx::setOutput(unsigned idx, OutputConfig drvCfg, unsigned rdiv, bool alt)
 {
-	chkAlt( idx, alt, "Si53xx::SetOutput" );
+	chkAlt( idx, alt, "Si53xx::setOutput" );
 	FMT pre( "OUT%u%s_", idx, (alt ? "A" : "") );
 
 	set( *FMT( "%sSYNC_EN",   *pre ), 1 );
@@ -1445,4 +1459,10 @@ Si53xx::Si53xx::reset(bool hard)
 {
 	this->set( hard ? "HARD_RST" : "SOFT_RST_ALL", 1 );
 	this->flushCache();
+}
+
+void
+Si53xx::Si53xx::syncRDividers()
+{
+	this->set( "SYNC", 1 );
 }

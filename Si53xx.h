@@ -281,6 +281,10 @@ namespace Si53xx {
 
 			// rdiv is ignored (not programmed) when switching the output OFF!
 			virtual void     setOutput(unsigned idx, OutputConfig drvCfg, unsigned rdiv = 2, bool alt = false);
+
+			virtual bool     getOutputEnable(unsigned idx, bool alt = false);
+			virtual void     setOutputEnable(unsigned idx, bool enable, bool alt = false);
+
 			virtual void     setOutputOff(unsigned idx, bool alt = false)
 			{
 				this->setOutput( idx, OutputConfig::OFF, alt );
@@ -397,6 +401,9 @@ namespace Si53xx {
 			virtual void     flushCache();
 
 			virtual void     reset(bool hard = true);
+
+			virtual void     syncRDividers();
+
 	};
 
 	/* Rational approximation of a floating-point number */
