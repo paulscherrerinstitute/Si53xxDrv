@@ -1466,3 +1466,10 @@ Si53xx::Si53xx::syncRDividers()
 {
 	this->set( "SYNC", 1 );
 }
+			
+
+void
+Si53xx::Si53xx::init(bool force)
+{
+	this->loadDefaults( force );
+}

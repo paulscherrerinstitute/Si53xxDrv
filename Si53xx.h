@@ -153,7 +153,17 @@ namespace Si53xx {
 		public:
 			Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
 
+			// to be called after object is constructed
+			virtual void init(bool force = false);
+
 			typedef uint64_t ValType;
+
+			// load hard-coded defaults; this is only done if
+			// the project ID cannot be found in the registers
+			// or if 'force' is true.
+			// The base/default version does nothing (to be implemented)
+			// in device-specific subclass.
+			virtual void loadDefaults(bool force) {}
 
 			// by default the algorithm checks if the preamble has already been written
 			// and automatically inserts it if this was not the case. By setting the

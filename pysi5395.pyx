@@ -21,6 +21,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
     ctypedef uint64_t ValType
     ValType  get(const string &) except +
     void     set(const string &, ValType v) except+
+    void     init(bool force = false) except+
 
   cdef extern from "Si5395.h":
     cdef cppclass Si5395(Si53xx):
@@ -88,6 +89,7 @@ cdef class SI5395:
         self.c_cls = Si5395( busn, i2cAddr )
       else:
         self.c_cls = Si5395()
+      self.c_cls.init()
       self.nest = []
 
     def get(self, key):

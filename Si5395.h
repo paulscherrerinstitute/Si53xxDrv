@@ -12,6 +12,7 @@ namespace Si53xx {
 			// set ZDM assuming N divider 0, feedback output 9a
 			using Si53xx::setZDM;
 			virtual void setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider = 2, OutputConfig outputDrvCfg = OutputConfig::LVDS33);
+			virtual void loadDefaults(bool force);
 	};
 };
 

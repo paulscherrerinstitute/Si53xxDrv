@@ -42,3 +42,8 @@ Si5395::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfi
 	prm.outputDrvCfg = outputDrvCfg;
 	this->setZDM( &prm );
 }
+
+void
+Si5395::loadDefaults(bool force)
+{
+}
