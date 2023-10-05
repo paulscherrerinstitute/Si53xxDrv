@@ -13,6 +13,12 @@ TstDrv::TstDrv()
 	for ( int i = 0; i < 0x1000; i++ ) {
 		regs.push_back( Reg(i) );
 	}
+	// must at least initialize the pre/postamble registers
+	// to something; otherwise, loading config file fails
+	// due to 'uninitialized' registers.
+    regs[0x540].update( 0 );
+    regs[0xb24].update( 0 );
+    regs[0xb25].update( 0 );
 }
 
 void
