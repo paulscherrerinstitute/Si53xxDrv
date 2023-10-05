@@ -4,6 +4,8 @@
 #include "Si53xxI2c.h"
 #include "TstDrv.h"
 
+#include "Si5395-RevA-cio_timing_base-CIO0100-Registers.h"
+
 namespace Si53xx {
 	extern SettingVec Si5395Settings;
 };
@@ -46,4 +48,32 @@ Si5395::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfi
 void
 Si5395::loadDefaults(bool force)
 {
+	const unsigned ID_SIZE = 8;
+	ArrayInitValProvider<si5395_reva_register_t> prov(
+		&si5395_reva_registers[0],
+		sizeof(si5395_reva_registers)/sizeof(si5395_reva_registers[0])
+	);
+
+	if ( ! force ) {
+		Si5395        tstDev;
+		char          buf[30];
+		/* load these values into a soft device */
+		tstDev.readCSV( &prov );
+		/* rewind for reuse */
+		prov.rewind();
+		/* Retrieve the ID */
+		for ( unsigned i = 0; i < ID_SIZE; i++ ) {
+			snprintf( buf, sizeof(buf), "DESIGN_ID%d", i );
+			if ( tstDev.get( buf ) != this->get ( buf ) ) {
+				/* this design ID has not been loaded yet */
+				force = 1;
+				break;
+			}
+		}
+	}
+	if ( force ) {
+		/* Now load to the real device */
+		this->readCSV( &prov );
+		printf("Si5395: Loaded Default Settings\n");
+	}
 }

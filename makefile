@@ -36,7 +36,7 @@ TstDrv.o: TstDrv.cc Si53xx.h TstDrv.h
 
 TstDrv.h: Si5395.h
 
-Si5395.o: Si5395.h
+Si5395.o: Si5395.h Si5395-RevA-cio_timing_base-CIO0100-Registers.h
 
 Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extract)
 	$(RM) $@
