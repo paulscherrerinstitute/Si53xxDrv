@@ -149,6 +149,47 @@ namespace Si53xx {
 
 	enum class OutputConfig { OFF, LVDS18, LVDS25, LVDS33 };
 
+	class InitValProvider {
+	public:
+		/* fetch next <address, value> pair;
+		 * return -1 if no more pairs are available
+		 */
+		virtual int	get(unsigned *addr, unsigned char *val) = 0;
+		virtual ~InitValProvider() {};
+	};
+
+	/* handle CBPro-generated headers (array element typenames change) */
+	template <typename T>
+	class ArrayInitValProvider : public InitValProvider {
+	private:
+		unsigned  idx;
+		const T  *arr;
+		size_t    len;
+	public:
+		ArrayInitValProvider(const T *a, size_t nelms)
+		: idx( 0     ),
+		  arr( a     ),
+		  len( nelms )
+		{
+		}
+
+		virtual int get(unsigned *addr, unsigned char *val)
+		{
+			if ( this->idx >= this->len ) {
+				return -1;
+			}
+			*addr = this->arr[this->idx].address;
+			*val  = this->arr[this->idx].value;
+			this->idx++;
+			return 0;
+		}
+
+		virtual void rewind()
+		{
+			this->idx = 0;
+		}
+	};
+
 	class Si53xx {
 		public:
 			Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
@@ -171,6 +212,8 @@ namespace Si53xx {
 			virtual void readCSV(FILE *f = stdin, bool noAutoPreamble = false);
 			virtual void readCSV(const char *f, bool noAutoPreamble = false);
 			virtual void readCSV(const std::string &f, bool noAutoPreamble = false);
+			// use the same method but via an abstrace 'InitValProvider' object
+			virtual void readCSV(InitValProvider *, bool noAutoPreamble = false);
 
 			virtual void dumpCSV(const char *f);
 			virtual void dumpCSV(const std::string &f);

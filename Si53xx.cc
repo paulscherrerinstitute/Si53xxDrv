@@ -399,44 +399,66 @@ Si53xx::Si53xx::readCSV(const char *fn, bool noAutoPreamble)
 	this->readCSV( *RAIIfeil( fn ), noAutoPreamble );
 }
 
+class FILEInitValProvider : public InitValProvider {
+private:
+	FILE *f;
+public:
+	FILEInitValProvider(FILE *f)
+	: f(f)
+	{
+	}
+	virtual int get(unsigned *a_p, unsigned char *v_p)
+	{
+	char     buf[2048];
+		while ( fgets( buf, sizeof( buf ), this->f ) ) {
+			if ( 2 == sscanf(buf, "%i,%hhi", a_p, v_p) ) {
+				return 0;
+			}
+		}
+		return -1;
+	}
+};
 
 void
 Si53xx::Si53xx::readCSV(FILE *f, bool noAutoPreamble)
 {
-char     buf[2048];
+FILEInitValProvider p( f );
+	this->readCSV( &p, noAutoPreamble );
+}
+
+void
+Si53xx::Si53xx::readCSV(InitValProvider *provider, bool noAutoPreamble)
+{
 uint8_t  rbuf[256];
 int      off          = -1;
 unsigned idx          = 0;
 bool     preambleSent = false;
+unsigned a;
+unsigned char v;
 
 	if ( ! noAutoPreamble && ! isPLLOff() ) {
 		this->sendPreamble();
 		preambleSent = true;
 	}
 
-	while ( fgets(buf, sizeof(buf), f) ) {
-		unsigned a,v;
-		if ( 2 == sscanf(buf, "%i,%i", &a, &v) ) {
-			if ( a >= this->regs.size() ) {
-				throw std::runtime_error("readCSV: address out of range");
+	while ( ! provider->get( &a, &v ) ) {
+		if ( a >= this->regs.size() ) {
+			throw std::runtime_error("readCSV: address out of range");
+		}
+		if ( (a == off + idx) && idx < sizeof(rbuf)  ) {
+			rbuf[idx] = v;
+			idx ++;
+		} else {
+			// short circuit idx == 0 case
+			if ( idx > 0 ) {
+				this->writeRegs( off, idx, rbuf );
 			}
-			if ( v > 255 ) {
-				throw std::runtime_error("readCSV: value out of range");
-			}
-			if ( (a == off + idx) && idx < sizeof(rbuf)  ) {
-				rbuf[idx] = v;
-				idx ++;
-			} else {
-				// short circuit idx == 0 case
-				if ( idx > 0 ) {
-					this->writeRegs( off, idx, rbuf );
-				}
-				rbuf[0] = v;
-				idx     = 1;
-				off     = a;
-			}
+			rbuf[0] = v;
+			idx     = 1;
+			off     = a;
 		}
 	}
+
 	// mop up
 	if ( idx > 0 ) {
 		this->writeRegs( off, idx, rbuf );
