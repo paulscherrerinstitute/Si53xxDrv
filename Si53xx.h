@@ -223,15 +223,6 @@ namespace Si53xx {
 			virtual void dumpSettings(const std::string &f);
 			virtual void dumpSettings(FILE *f = stdout);
 
-			// initialize to a sane state; usually to values obtained from CBPro;
-			// you can also call 'readCSV' from a subclass.
-			// Note that 'init' assumes the preamble has already been sent
-			// and it does not send the postamble itself.
-			// The rationale is that an application uses this as part
-			// of a more complete initialization sequence in order to
-			// establish a base-line.
-			virtual void init();
-
 		private:
 			struct StrCmp {
 				int operator()(const char *a, const char *b) const

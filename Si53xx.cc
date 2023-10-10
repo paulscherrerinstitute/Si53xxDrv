@@ -1424,11 +1424,6 @@ Si53xx::Si53xx::setRDivider(unsigned idx, unsigned val, bool alt)
 	}
 }
 
-void
-Si53xx::Si53xx::init()
-{
-}
-
 unsigned
 Si53xx::Si53xx::getStatusLOS()
 {
