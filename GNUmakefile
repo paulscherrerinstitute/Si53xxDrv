@@ -9,6 +9,8 @@ include $(dir $(abspath $(firstword $(MAKEFILE_LIST))))/makefile
 IocshDeclWrapper_VERSION=straumann_t
 
 SOURCES+=IocshSup.cc
+HEADERS+=Si53xx.h
+HEADERS+=Si5395.h
 
 MODULE=Si53xxDrv
 
