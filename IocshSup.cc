@@ -23,7 +23,7 @@ Si53xx::si5395Find(const char *name)
 	}
 }
 
-static int Si5395_Register(const char *name, const char *i2cBus, unsigned i2cAddr)
+static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2cAddr)
 {
     try {
         objMap.at( name );
@@ -52,7 +52,7 @@ static int Si5395_Register(const char *name, const char *i2cBus, unsigned i2cAdd
   IOCSH_MEMBER_WRAP_OVLD( &objMap, Si5395, memb, sig, "Si5395_"#memb, argHelps )
 
 IOCSH_FUNC_WRAP_REGISTRAR( Si5395Registrar,
-  IOCSH_FUNC_WRAP( Si5395_Register, "objName", "i2c-Bus, e.g., /dev/i2c-5", "i2c-Address" );
+  IOCSH_FUNC_WRAP( Si5395RegisterClock, "objName", "i2c-Bus, e.g., /dev/i2c-5", "i2c-Address" );
   SI5395_WRAP(      isPLLOff );
   SI5395_WRAP(      sendPreamble );
   SI5395_WRAP(      sendPostamble );
