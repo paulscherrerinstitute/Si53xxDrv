@@ -14,7 +14,7 @@ using namespace IocshDeclWrapper;
 using namespace Si53xx;
 
 Si5395 *
-si5395Find(const char *name)
+Si53xx::si5395Find(const char *name)
 {
 	return objMap.at( name );
 }
