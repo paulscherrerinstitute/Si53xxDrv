@@ -16,7 +16,11 @@ using namespace Si53xx;
 Si5395 *
 Si53xx::si5395Find(const char *name)
 {
-	return objMap.at( name );
+	try {
+		return objMap.at( name );
+	} catch ( std::out_of_range & ) {
+		return 0;
+	}
 }
 
 static int Si5395_Register(const char *name, const char *i2cBus, unsigned i2cAddr)
