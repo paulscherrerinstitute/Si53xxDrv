@@ -1508,3 +1508,16 @@ Si53xx::Si53xx::getZDMRIdx() const
 	// sublass should provide this
 	throw std::range_error("Si53xx: no ZDM R-divider index known");
 }
+
+void
+Si53xx::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfig outputDrvCfg)
+{
+	ZDMParms prm( finHz );
+	prm.inputSel     = inputSel;
+	prm.nDividerSel  = this->getZDMNIdx();
+	prm.outputSel    = this->getZDMRIdx();
+	prm.outputSelAlt = this->getZDMRAlt();
+	prm.rDivider     = rDivider;
+	prm.outputDrvCfg = outputDrvCfg;
+	this->setZDM( &prm );
+}

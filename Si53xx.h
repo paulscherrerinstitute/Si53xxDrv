@@ -366,6 +366,8 @@ namespace Si53xx {
 			// using N divider 'nidx'
 			virtual void     setZDM(ZDMParms *p);
 
+			virtual void     setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider = 2, OutputConfig outputDrvCfg = OutputConfig::LVDS33);
+
 			// enable/disables ZDM
 			virtual void     setZDM(bool enabled);
 			// returns 0 if ZDM is disabled and the configured input freqency

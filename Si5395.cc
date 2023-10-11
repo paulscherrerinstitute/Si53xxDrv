@@ -33,19 +33,6 @@ Si5395::Si5395()
 }
 
 void
-Si5395::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfig outputDrvCfg)
-{
-	ZDMParms prm( finHz );
-	prm.inputSel     = inputSel;
-	prm.nDividerSel  = 0;
-	prm.outputSel    = 9;
-	prm.outputSelAlt = true;
-	prm.rDivider     = rDivider;
-	prm.outputDrvCfg = outputDrvCfg;
-	this->setZDM( &prm );
-}
-
-void
 Si5395::loadDefaults(bool force)
 {
 	const unsigned ID_SIZE = 8;
