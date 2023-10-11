@@ -1285,7 +1285,7 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 		np->P.r   = (this->pfdMaxFreq + this->pfdMinFreq)/2.0/(double)hz;
 	}
 
-    np->M.r  = 5.0 * (double)r;
+	np->M.r  = 5.0 * (double)r;
 	np->M.r *= ( np->N.den > 0 ? (double)np->N.num/(double)np->N.den : np->N.r );
 	np->M.r *= ( np->P.den > 0 ? (double)np->P.num/(double)np->P.den : np->P.r );
 
