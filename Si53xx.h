@@ -450,6 +450,29 @@ namespace Si53xx {
 
 	};
 
+	// RAII object for preamble management
+	class PreambleMgr {
+	private:
+		bool    wasOff;
+		Si53xx *ctx;
+	public:
+		PreambleMgr(Si53xx *ctx)
+		: wasOff( ctx->isPLLOff() ),
+		  ctx   ( ctx             )
+		{
+			if ( ! wasOff ) {
+				ctx->sendPreamble();
+			}
+		}
+
+		~PreambleMgr()
+		{
+			if ( ! wasOff ) {
+				ctx->sendPostamble();
+			}
+		}
+	};
+
 	/* Rational approximation of a floating-point number */
 	void ratapp(double n, uint64_t maxNum, uint64_t maxDen, uint64_t *nump, uint64_t *denp);
 
