@@ -372,6 +372,9 @@ namespace Si53xx {
 			// if ZDM is enabled;
 			virtual ValType  getZDM();
 
+
+			virtual ValType  getZDMFreq(unsigned nidx, unsigned ridx, bool ralt);
+
 			virtual void     selInput(unsigned inp);
 
 			// Parameters describing a divider; if 'den' is zero a floating-

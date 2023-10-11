@@ -1354,6 +1354,26 @@ Si53xx::Si53xx::getZDM()
 	return this->get( "ZDM_EN" ) ? this->finFreq : 0;
 }
 
+uint64_t
+Si53xx::Si53xx::getZDMFreq(unsigned nidx, unsigned ridx, bool ralt)
+{
+	if ( ! this->get( "ZDM_EN" ) ) {
+		return 0;
+	}
+	double hz = (double)this->refFreq;
+	ValType num, den;
+	getMXAXBDivider( &num, &den );
+        hz *= (double)num;
+        hz /= (double)den;
+	getNDivider( nidx, &num, &den );
+        hz *= (double)den;
+        hz /= (double)num;
+	unsigned rdiv;
+	rdiv = getRDivider( ridx, ralt );
+	hz /= (double)rdiv;
+	return (uint64_t)hz;
+}
+
 unsigned
 Si53xx::Si53xx::getRDivider(unsigned idx, bool alt)
 {
@@ -1468,6 +1488,18 @@ void
 Si53xx::Si53xx::init(bool force)
 {
 	this->loadDefaults( force );
+
+	try {
+		unsigned zdmNIdx = this->getZDMNIdx();
+		unsigned zdmRIdx = this->getZDMRIdx();
+		bool     zdmRAlt = this->getZDMRAlt();
+		ValType  hz      = this->getZDMFreq( zdmNIdx, zdmRIdx, zdmRAlt );
+		if ( 0 != hz ) {
+			this->finFreq = hz;
+		}
+	} catch ( std::range_error & ) {
+		// unknown or unsupported ZDM divider indices
+	}
 }
 
 unsigned
