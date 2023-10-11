@@ -13,6 +13,9 @@ namespace Si53xx {
 			using Si53xx::setZDM;
 			virtual void setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider = 2, OutputConfig outputDrvCfg = OutputConfig::LVDS33);
 			virtual void loadDefaults(bool force);
+			virtual unsigned getZDMNIdx() const { return 0;    }
+			virtual unsigned getZDMRIdx() const { return 9;    }
+			virtual bool     getZDMRAlt() const { return true; }
 	};
 };
 
