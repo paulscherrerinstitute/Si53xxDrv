@@ -46,6 +46,28 @@ static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2
     return 0;
 }
 
+template <> struct IocshDeclWrapper::Convert< Si53xx::OutputConfig, Si53xx::OutputConfig > {
+    static void setArg( iocshArg *a )
+    {
+        a->name = "OutputConfig (0: off, 1: lvds18, 2: lvds25, 3: lvds33)"; /* set default name/help for arg;
+                             * shown by iocsh help; this may
+                             * be overridden by IOCSH_WRAP_FUNC()
+                             * arguments for individual functions.
+                             */
+        a->type = iocshArgInt;
+    }
+
+    static Si53xx::OutputConfig getArg(
+                     const iocshArgBuf         *arg,
+                     IocshDeclWrapper::Context *ctx,
+                     int                        argNo)
+    {
+        /* extract function argument from *arg, convert to MYTYPE and return */
+        return (Si53xx::OutputConfig) arg->ival;
+    }
+};
+
+
 #define SI5395_WRAP(memb, argHelps...) \
   IOCSH_MEMBER_WRAP( &objMap, Si5395, memb, argHelps )
 #define SI5395_WRAP_OVLD(memb, sig, argHelps...) \
