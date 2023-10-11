@@ -1469,3 +1469,10 @@ Si53xx::Si53xx::init(bool force)
 {
 	this->loadDefaults( force );
 }
+
+unsigned
+Si53xx::Si53xx::getZDMRIdx() const
+{
+	// sublass should provide this
+	throw std::range_error("Si53xx: no ZDM R-divider index known");
+}

@@ -256,6 +256,10 @@ namespace Si53xx {
 			virtual void readRegs (unsigned offset, unsigned n, uint8_t *buf);
 			virtual void writeRegs(unsigned offset, unsigned n, uint8_t *buf);
 
+			virtual unsigned  getZDMNIdx() const { return 0;    }
+			virtual unsigned  getZDMRIdx() const;
+			virtual bool      getZDMRAlt() const { return true; }
+
 			virtual ValType get(SettingShp);
 			virtual void    set(SettingShp, ValType);
 
