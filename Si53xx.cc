@@ -1510,7 +1510,7 @@ Si53xx::Si53xx::getZDMRIdx() const
 }
 
 void
-Si53xx::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfig outputDrvCfg)
+Si53xx::Si53xx::setZDM(uint64_t finHz, unsigned inputSel, unsigned rDivider, OutputConfig outputDrvCfg)
 {
 	ZDMParms prm( finHz );
 	prm.inputSel     = inputSel;
