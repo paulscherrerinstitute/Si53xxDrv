@@ -555,6 +555,19 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, Si53xx::ValType num, Si53xx::ValT
 	if ( s.requirePLLOff && ! isPLLOff() ) {
 		throw std::logic_error("Si53xx::setDivider: cannot set divider while PLL is running");
 	}
+
+	if ( ( 'N' == s.prefix[0] ) || ( den > 1 ) ) {
+		Si53xx::ValType msbNum = ((Si53xx::ValType)1) << ( s.num->getLeft() - s.num->getRight() );
+		Si53xx::ValType msbDen = ((Si53xx::ValType)1) << ( s.den->getLeft() - s.den->getRight() );
+		if ( 0 == den ) {
+			den = 1;
+		}
+		while ( ( 0 == (num & msbNum) ) && ( 0 == (den & msbDen) ) ) {
+			num <<= 1;
+			den <<= 1;
+		}
+	}
+
 	set( s.num,    num );
 	set( s.den,    den );
 
@@ -594,8 +607,8 @@ Si53xx::Si53xx::setDivider(DividerSettings &s, double val)
 	uint64_t maxn, maxd;
 
 
-	maxn = (1 << (s.num->getLeft() - s.num->getRight())); maxn |= (maxn - 1);
-	maxd = (1 << (s.den->getLeft() - s.den->getRight())); maxd |= (maxd - 1);
+	maxn = (1ULL << (s.num->getLeft() - s.num->getRight())); maxn |= (maxn - 1);
+	maxd = (1ULL << (s.den->getLeft() - s.den->getRight())); maxd |= (maxd - 1);
 
 	ratapp( val, maxn, maxd, &n, &d );
 
