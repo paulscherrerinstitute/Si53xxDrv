@@ -1262,7 +1262,7 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 
 	// try to find integer dividers with the constraint that fvco remain
 	// within the 'known' range.
-    //
+	//
 	//   fvco = fin * r * N  (R divider is even >= 2)
 	//
 
@@ -1272,11 +1272,16 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 		np->N.den = 1;
 	} else {
 		// N-output frequency too high; must resort to fractional N
-        np->N.r   = (this->vcoMaxFreq + this->vcoMinFreq)/2.0/(double)hz/(double)r;
+		np->N.r   = (this->vcoMaxFreq + this->vcoMinFreq)/2.0/(double)hz/(double)r;
 	}
 
 	// see if we find an integer p
 	p = (hz/this->pfdMaxFreq);
+
+        if ( p * this->pfdMaxFreq < hz ) {
+		p++;
+	}
+
 	if ( hz >= this->pfdMinFreq * p ) {
 		// record a valid integer P
 		np->P.num = p;
@@ -1285,7 +1290,7 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 		np->P.r   = (this->pfdMaxFreq + this->pfdMinFreq)/2.0/(double)hz;
 	}
 
-	np->M.r  = 5.0 * (double)r;
+	np->M.r  = (double)r/5.0;
 	np->M.r *= ( np->N.den > 0 ? (double)np->N.num/(double)np->N.den : np->N.r );
 	np->M.r *= ( np->P.den > 0 ? (double)np->P.num/(double)np->P.den : np->P.r );
 
