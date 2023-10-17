@@ -1247,7 +1247,9 @@ Si53xx::Si53xx::PLLParms::validate()
 //
 //     Mnum/Mden = R/5 * Pnum * Nnum / Pden / Nden
 //
-//  with all the numbers remaining within their valid range
+//  with all the numbers remaining within their valid range;
+//  however: M is actually unused in ZDM, so we can just set
+//  it to a fractional value.
 //
 
 void
@@ -1255,77 +1257,41 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 {
 	ZDMPLLParmsShp np = ZDMPLLParms::create( this, prm->inputSel, prm->nDividerSel, prm->rDivider );
 
-	ValType  p,n, p5 = 0, n5 = 0, r = prm->rDivider;
+	ValType  p,n, r = prm->rDivider;
 	uint64_t hz = prm->finHz;
 
 	// try to find integer dividers with the constraint that fvco remain
 	// within the 'known' range.
-	//   fvco = fin / P * 5 * M      (fixed 5 divider present)
-	//   fout = fin (zdm) = fvco/r/N (min. R divider is 2    )
+    //
+	//   fvco = fin * r * N  (R divider is even >= 2)
 	//
-	//   thus for integer ratios:  5*M = r * N * P
 
 	n  = this->vcoMaxFreq/hz/r; 
-	if ( hz*n*r < this->vcoMinFreq ) {
-		throw std::runtime_error("Si53xx::setZDM: unable to find all-integer PLL configuration");
-		// frequency probably too high; must resort to fractional N
+	if ( hz*n*r >= this->vcoMinFreq ) {
+		np->N.num = n;
+		np->N.den = 1;
+	} else {
+		// N-output frequency too high; must resort to fractional N
+        np->N.r   = (this->vcoMaxFreq + this->vcoMinFreq)/2.0/(double)hz/(double)r;
 	}
 
-	// see if we find a p divisible by 5; this may work for larger fin/fpfd ratios
-	// where we are less likely to find an N divisible by 5.
-	for ( p = (hz/this->pfdMinFreq); (hz <= this->pfdMaxFreq * p) && 0 == p5; p-- ) {
+	// see if we find an integer p
+	p = (hz/this->pfdMaxFreq);
+	if ( hz >= this->pfdMinFreq * p ) {
 		// record a valid integer P
 		np->P.num = p;
 		np->P.den = 1;
-		if ( 0 == ( np->P.num % 5 ) ) {
-			// 5 divides P => M = r*N*p5
-			p5 = p/5;
-			np->M.num = r*n*p5;
-			np->M.den = 1;
-			np->N.num = n;
-			np->N.den = 1;
-		}
+	} else {
+		np->P.r   = (this->pfdMaxFreq + this->pfdMinFreq)/2.0/(double)hz;
 	}
 
-	if ( 0 == np->P.den ) {
-		throw std::runtime_error("Si53xx::setZDM: unable to find all-integer PLL configuration");
-		// would have to resort to fractional P
-	}
-
-	if ( 0 == p5 ) {
-		// P not divisible by 5; try to find an N. Better for small fin
-		while ( hz*n*r >= this->vcoMinFreq && 0 == n5 ) {
-			// record a valid integer N
-			np->N.num = n;
-			np->N.den = 1;
-			if ( 0 == ( n % 5 ) ) {
-				// found one
-				n5        = n/5;
-				np->N.num = n;
-				np->N.den = 1;
-				// np->P.den != 0 was tested above
-				np->M.num = r * n5 * np->P.num;
-				np->M.den = 1;
-			}
-			n--;
-		}
-	}
-
-	// at this point we do have integer n and p but not necessarily a n5 or a p5
-
-	if ( 0 == p5 && 0 == n5 ) {
-		/* no multiple of 5 found; must use fractional divider;
-		 * use on M. This is not a problem, in particular because
-		 * M is irrelevant in ZDM mode.
-		 * Note the 0 == p5 test also covers the
-		 * case when no integer P divider at all is found...
-		 */
-		np->M.num = r * np->N.num * np->P.num;
-		np->M.den = 5;
-	}
+    np->M.r  = 5.0 * (double)r;
+	np->M.r *= ( np->N.den > 0 ? (double)np->N.num/(double)np->N.den : np->N.r );
+	np->M.r *= ( np->P.den > 0 ? (double)np->P.num/(double)np->P.den : np->P.r );
 
 	// program the reference divider
-	np->MXAXB.r = (double)hz * (double)np->N.num/(double)np->N.den * (double)r / this->refFreq;
+	np->MXAXB.r  = (double)hz * (double)r / this->refFreq;
+	np->MXAXB.r *= ( np->N.den > 0 ? (double)np->N.num/(double)np->N.den : np->N.r );
 
 	np->fin = hz;
 
