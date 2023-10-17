@@ -167,8 +167,8 @@ Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53x
   finFreq          ( 0           ),
   refFreq          (    48000000 ),
   // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
-  vcoMinFreq       ( 13280000000 ),
-  vcoMaxFreq       ( 14000000000 ),
+  vcoMinFreq       ( 13200000000 ), // exhaustive scan indicates 13.2GHz is the lower limit
+  vcoMaxFreq       ( 14400000000 ), // exhaustive scan indicates 14.4GHz is the upper limit
   // undocumented; observed min/max as produced by CBPro (while maintaining BW params)
   pfdMinFreq       (     1770000 ),
   pfdMaxFreq       (     2000000 )
