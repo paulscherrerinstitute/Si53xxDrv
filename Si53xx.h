@@ -428,6 +428,16 @@ namespace Si53xx {
 				{
 					return std::make_shared<PLLParms>(Key(), obj, pidx);
 				}
+
+				virtual ValType getVcoMinFreq() const
+				{
+					return obj->vcoMinFreq;
+				}
+
+				virtual ValType getVcoMaxFreq() const
+				{
+					return obj->vcoMaxFreq;
+				}
 			};
 
 			// program the PLL; valid divider settings must have been precomputed!

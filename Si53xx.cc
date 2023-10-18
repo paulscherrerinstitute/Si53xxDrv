@@ -1072,7 +1072,7 @@ typedef std::shared_ptr<ZDMPLLParms> ZDMPLLParmsShp;
 class ZDMPLLParms : public Si53xx::Si53xx::PLLParms {
 protected:
 	unsigned nidx;
-        unsigned rdiv;
+	unsigned rdiv;
 public:
 	Si53xx::Si53xx::DivParm N;
 
@@ -1132,16 +1132,18 @@ public:
 	virtual void validate()
 	{
 		PLLParms::validate();
-		if ( 1 != N.den ) {
-			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. N not integer");
+        double fvco = fin * N.get() * getR();
+		if ( fvco  < getVcoMinFreq() ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. VCO violation by N*R divider");
 		}
-		if ( 1 != P.den ) {
-			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. P not integer");
+		if ( fvco  > getVcoMaxFreq() ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: max. VCO violation by N*R divider");
 		}
-		// ignore uint64 overflow
-		if ( P.num * N.num * rdiv * M.den != 5 * M.num ) {
-			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: invalid divider combination for ZDM mode!");
-		}
+	}
+
+	virtual unsigned getR() const
+	{
+		return rdiv;
 	}
 };
 
@@ -1226,10 +1228,10 @@ Si53xx::Si53xx::PLLParms::validate()
 
 	double fvco = fpfd * M.get() * 5.0;
 
-	if ( fvco  < obj->vcoMinFreq ) {
+	if ( fvco  < getVcoMinFreq() ) {
 		throw std::invalid_argument("Si53xx::PLLParms::validate: min. VCO violation by M divider");
 	}
-	if ( fvco  > obj->vcoMaxFreq ) {
+	if ( fvco  > getVcoMaxFreq() ) {
 		throw std::invalid_argument("Si53xx::PLLParms::validate: max. VCO violation by M divider");
 	}
 }
