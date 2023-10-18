@@ -1132,7 +1132,17 @@ public:
 	virtual void validate()
 	{
 		PLLParms::validate();
-        double fvco = fin * N.get() * getR();
+		if ( ! isfinite( N.get() ) ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: N is not finite!");
+		}
+		if ( 0.0 == N.get() ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: N is zero!");
+		}
+		if ( 0 == getR() ) {
+			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: R is zero!");
+		}
+
+		double fvco = fin * N.get() * getR();
 		if ( fvco  < getVcoMinFreq() ) {
 			throw std::invalid_argument("Si53xx::ZDMPLLParms::validate: min. VCO violation by N*R divider");
 		}
@@ -1217,6 +1227,29 @@ Si53xx::Si53xx::PLLParms::set()
 void
 Si53xx::Si53xx::PLLParms::validate()
 {
+
+	if ( ! isfinite( P.get() ) ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: P is not finite!");
+	}
+	if ( 0.0 ==  P.get() ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: P is zero!");
+	}
+
+	if ( ! isfinite( M.get() ) ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: M is not finite!");
+	}
+	if ( 0.0 ==  M.get() ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: M is zero!");
+	}
+
+
+	if ( ! isfinite( fin ) ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: fin is not finite!");
+	}
+	if ( 0.0 ==  fin ) {
+		throw std::invalid_argument("Si53xx::PLLParms::validate: fin is zero!");
+	}
+
 	double fpfd = fin / P.get();
 
 	if ( fpfd  < obj->pfdMinFreq ) {
@@ -1262,6 +1295,10 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 	ValType  p,n, r = prm->rDivider;
 	uint64_t hz = prm->finHz;
 
+	if ( hz < this->pfdMinFreq ) {
+		throw std::invalid_argument(std::string("Si53xx::setZDM -- requested input frequency (") + std::to_string(hz) + ") too low");
+	}
+
 	// try to find integer dividers with the constraint that fvco remain
 	// within the 'known' range.
 	//
@@ -1293,8 +1330,8 @@ Si53xx::Si53xx::setZDM(ZDMParms *prm)
 	}
 
 	np->M.r  = (double)r/5.0;
-	np->M.r *= ( np->N.den > 0 ? (double)np->N.num/(double)np->N.den : np->N.r );
-	np->M.r *= ( np->P.den > 0 ? (double)np->P.num/(double)np->P.den : np->P.r );
+	np->M.r *= np->N.get();
+	np->M.r *= np->P.get();
 
 	// program the reference divider
 	np->MXAXB.r  = (double)hz * (double)r / this->refFreq;
