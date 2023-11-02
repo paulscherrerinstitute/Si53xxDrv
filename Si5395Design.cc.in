@@ -1,0 +1,14 @@
+// Include the CBPro-generated Si5395-RevA-xxx-Registers.h file here
+#include <Si53xxDesign.h>
+#include <Si5395.h>
+
+using namespace Si53xx;
+
+// This registers the initialization array in the design vault.
+// The design-ID is extracted and used as a key into the map.
+static int dummy = si5395DesignVault.addDesign( 
+    new  ArrayInitValProvider<si5395_reva_register_t>(
+            &si5395_reva_registers[0],
+            sizeof(si5395_reva_registers)/sizeof(si5395_reva_registers[0])
+         )
+);

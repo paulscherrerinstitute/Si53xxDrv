@@ -23,7 +23,7 @@ Si53xx::si5395Find(const char *name)
 	}
 }
 
-static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2cAddr)
+static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2cAddr, const char *designId)
 {
     try {
         objMap.at( name );
@@ -37,7 +37,7 @@ static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2
             throw std::runtime_error("Error: missing i2c bus name");
         }
         Si5395 *o = new Si5395( i2cBus, i2cAddr );
-		o->init();
+		o->init(false, designId);
         objMap[ name ] = o ;
     } catch ( std::exception &e ) {
         errlogPrintf("Error: registration failed due to exception: %s\n", e.what());
@@ -74,7 +74,7 @@ template <> struct IocshDeclWrapper::Convert< Si53xx::OutputConfig, Si53xx::Outp
   IOCSH_MEMBER_WRAP_OVLD( &objMap, Si5395, memb, sig, "Si5395_"#memb, argHelps )
 
 IOCSH_FUNC_WRAP_REGISTRAR( Si5395Registrar,
-  IOCSH_FUNC_WRAP( Si5395RegisterClock, "objName", "i2c-Bus, e.g., /dev/i2c-5", "i2c-Address" );
+  IOCSH_FUNC_WRAP( Si5395RegisterClock, "objName", "i2c-Bus, e.g., /dev/i2c-5", "i2c-Address", "designId" );
   SI5395_WRAP(      isPLLOff );
   SI5395_WRAP(      sendPreamble );
   SI5395_WRAP(      sendPostamble );
@@ -91,4 +91,5 @@ IOCSH_FUNC_WRAP_REGISTRAR( Si5395Registrar,
   SI5395_WRAP_OVLD( get,        (const std::string&), "key" );
   SI5395_WRAP_OVLD( set,        (const std::string&, Si53xx::Si53xx::ValType), "key", "value" );
   SI5395_WRAP_OVLD( setZDM,     (uint64_t, unsigned, unsigned, OutputConfig), "freqHz", "inputSel", "rDivider (even >= 2)", "outputConfig (3 for lvds33)" );
+  SI5395_WRAP(      getDesignId );
 )

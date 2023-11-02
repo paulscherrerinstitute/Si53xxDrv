@@ -6,19 +6,26 @@ SOURCES+=pysi5395.cc
 
 CXXFLAGS=-g -fpic -std=c++11 -Wall
 
+DESIGN_H=$(wildcard Si5395-RevA-*Registers.h)
 
-OBJS=$(SOURCES:%.cc=%.o)
+OBJS=$(SOURCES:%.cc=%.o) $(DESIGN_H:%.h=%.o)
 PROGS=$(addprefix $(ODIR), Tst CsvDiff)
 TGTS=$(addprefix $(ODIR),pysi5395.so) $(PROGS)
 
 all: $(TGTS)
+
+$(DESIGN_H:%.h=%.cc):%.cc:%.h Si5395Design.cc.in
+	$(RM) $@
+	echo "#include <$<>"             >> $@
+	cat  Si5395Design.cc.in          >> $@
+
 
 $(PROGS):%:%.o $(addprefix $(ODIR),TstDrv.o Si53xx.o Si5395Settings.o Si5395.o Si53xxI2c.o)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 pysi5395_CXXFLAGS=-I/usr/include/python3.10
 
-$(ODIR)pysi5395.so: $(addprefix $(ODIR),Si53xx.o Si5395Settings.o Si5395.o pysi5395.o TstDrv.o Si53xxI2c.o)
+$(ODIR)pysi5395.so: $(addprefix $(ODIR),Si53xx.o Si5395Settings.o Si5395.o pysi5395.o TstDrv.o Si53xxI2c.o $(DESIGN_H:%.h=%.o))
 	$(CXX) -shared -o $@ $^
 
 $(ODIR)pysi5395.cc: pysi5395.pyx
@@ -36,7 +43,7 @@ TstDrv.o: TstDrv.cc Si53xx.h TstDrv.h
 
 TstDrv.h: Si5395.h
 
-Si5395.o: Si5395.h Si5395-RevA-cio_timing_base-CIO0100-Registers.h
+Si5395.o: Si5395.h Si5395-RevA-cio_timing_base-CIO0100-Registers.h Si53xxDesign.h
 
 Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extract)
 	$(RM) $@
@@ -51,5 +58,5 @@ $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
 .PHONY: clean
 
 clean:
-	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract)
+	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract) $(DESIGN_H:%.h=%.cc)
 endif

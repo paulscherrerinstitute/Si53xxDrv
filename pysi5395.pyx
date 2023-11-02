@@ -21,7 +21,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
     ctypedef uint64_t ValType
     ValType  get(const string &) except +
     void     set(const string &, ValType v) except+
-    void     init(bool force = false) except+
+    void     init(bool force, const string &id) except+
 
   cdef extern from "Si5395.h":
     cdef cppclass Si5395(Si53xx):
@@ -72,6 +72,7 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     reset(bool) except+
       void     flushCache() except+
       void     syncRDividers() except+
+      string   getDesignId() except+
 
 cpdef enum OutputConfig:
   OFF    = <int>off
@@ -84,12 +85,12 @@ cdef class SI5395:
     cdef Si5395 c_cls
     cdef list   nest
 
-    def __init__(self, busn=None, i2cAddr=0x68):
+    def __init__(self, busn=None, i2cAddr=0x68, str designId=""):
       if ( not busn is None ):
         self.c_cls = Si5395( busn, i2cAddr )
       else:
         self.c_cls = Si5395()
-      self.c_cls.init()
+      self.c_cls.init(False, designId)
       self.nest = []
 
     def get(self, key):
@@ -227,3 +228,6 @@ cdef class SI5395:
 
     def syncRDividers(self):
       self.c_cls.syncRDividers()
+
+    def getDesignId(self):
+      return self.c_cls.getDesignId()

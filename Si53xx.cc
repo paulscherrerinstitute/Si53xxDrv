@@ -1534,9 +1534,9 @@ Si53xx::Si53xx::syncRDividers()
 			
 
 void
-Si53xx::Si53xx::init(bool force)
+Si53xx::Si53xx::init(bool force, const std::string &designId)
 {
-	this->loadDefaults( force );
+	this->loadDefaults( force, designId );
 
 	try {
 		unsigned zdmNIdx = this->getZDMNIdx();

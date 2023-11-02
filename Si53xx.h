@@ -197,7 +197,7 @@ namespace Si53xx {
 			virtual ~Si53xx() {};
 
 			// to be called after object is constructed
-			virtual void init(bool force = false);
+			virtual void init(bool force = false, const std::string &designId = "");
 
 			typedef uint64_t ValType;
 
@@ -206,7 +206,7 @@ namespace Si53xx {
 			// or if 'force' is true.
 			// The base/default version does nothing (to be implemented)
 			// in device-specific subclass.
-			virtual void loadDefaults(bool force) {}
+			virtual void loadDefaults(bool force, const std::string &designId) {}
 
 			// by default the algorithm checks if the preamble has already been written
 			// and automatically inserts it if this was not the case. By setting the
