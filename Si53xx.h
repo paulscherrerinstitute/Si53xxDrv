@@ -39,7 +39,7 @@ namespace Si53xx {
 			uint8_t                  selfRstMsk;
 			uint8_t                  value;
 			bool                     valid;
-                        bool                     cacheable;
+			bool                     cacheable;
 			vector<const Setting*>   users;
 
 		public:
@@ -154,7 +154,8 @@ namespace Si53xx {
 		/* fetch next <address, value> pair;
 		 * return -1 if no more pairs are available
 		 */
-		virtual int	get(unsigned *addr, unsigned char *val) = 0;
+		virtual int	 get(unsigned *addr, unsigned char *val) = 0;
+		virtual void rewind()                                = 0;
 		virtual ~InitValProvider() {};
 	};
 

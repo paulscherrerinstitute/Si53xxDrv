@@ -417,6 +417,11 @@ public:
 		}
 		return -1;
 	}
+
+	virtual void rewind()
+	{
+		::rewind( f );
+	}
 };
 
 void
