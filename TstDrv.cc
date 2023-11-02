@@ -19,6 +19,10 @@ TstDrv::TstDrv()
     regs[0x540].update( 0 );
     regs[0xb24].update( 0 );
     regs[0xb25].update( 0 );
+	// Also initialize ID
+	for ( int i = 0; i < 8; i++ ) {
+		regs[0x26b + i].update( 0 );
+	}
 }
 
 void
