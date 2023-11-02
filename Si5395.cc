@@ -64,3 +64,21 @@ Si5395::loadDefaults(bool force)
 		printf("Si5395: Loaded Default Settings\n");
 	}
 }
+
+std::string
+Si5395::getDesignId()
+{
+	char           buf[30];
+	const unsigned ID_SIZE = 8;
+	char           id[ID_SIZE + 1];
+	unsigned       idx;
+	for ( idx = 0; idx < ID_SIZE; idx++ ) {
+		snprintf( buf, sizeof(buf), "DESIGN_ID%d", idx );
+		if ( 0 == (id[idx] = this->get( buf )) ) {
+			break;
+		}
+	}
+	id[idx]    = 0;
+	return std::string( id );
+}
+

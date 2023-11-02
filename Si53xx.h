@@ -343,6 +343,12 @@ namespace Si53xx {
 			virtual void     showDiff(Si53xx *other, const char *fn);
 			virtual void     showDiff(Si53xx *other, FILE *f=stdout);
 
+			virtual std::string getDesignID()
+			{
+				// implemented by subclass
+				return std::string();
+			}
+
 			struct ZDMParms {
 				uint64_t     finHz;
 				unsigned     inputSel;

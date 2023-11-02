@@ -13,6 +13,7 @@ namespace Si53xx {
 			virtual unsigned getZDMNIdx() const { return 0;    }
 			virtual unsigned getZDMRIdx() const { return 9;    }
 			virtual bool     getZDMRAlt() const { return true; }
+			virtual std::string getDesignId();
 	};
 };
 
