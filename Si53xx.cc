@@ -10,6 +10,7 @@ using namespace Si53xx;
 Reg::Reg(RegAddr addr)
 : addr      ( addr ),
   selfRstMsk( 0 ),
+  selfSetMsk( 0 ),
   value     ( 0 ),
   valid     ( false ),
   cacheable ( true  )
@@ -87,6 +88,11 @@ Reg::addUser(const Setting *s)
 
 	// maybe we have to add to the self-clearing mask?
 	switch ( s->getAccess() ) {
+		case Access::SelfSet:
+		{
+			uint8_t m = (s->toMask() >> i);
+			this->selfSetMsk |= m;
+		}
 		case Access::SelfClear:
 		{
 			uint8_t m = (s->toMask() >> i);
@@ -207,10 +213,12 @@ Si53xx::Si53xx::readRegs(unsigned offset, unsigned n, uint8_t *buf)
 	while ( n > 0 ) {
 		const Reg &r = this->regs.at( offset );
 		int        v = r.getValue();
-		uint8_t    m = r.getSelfRstMsk();
+		uint8_t   rm = r.getSelfRstMsk();
+		uint8_t   sm = r.getSelfSetMsk();
 
-		if ( v >= 0 && ( ( v & m ) == 0 ) ) {
+		if ( v >= 0 && ( ( v & rm ) == 0 ) && ( ( ~v & sm ) == 0 ) ) {
 			// we have a valid cache and all self-clearing bits are reset
+			// and all self-setting bits are set.
 			*buf++ = v;
 			offset++;
 			n--;

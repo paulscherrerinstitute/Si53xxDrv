@@ -1,4 +1,4 @@
-/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.c) -- DO NOT _MODIFY! */
+/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.cc) -- DO NOT _MODIFY! */
 #include <Si53xx.h>
 namespace Si53xx {
 SettingVec Si5395Settings = {	Setting::mkSetting("DIE_REV", Access::RO, 3, 0, {0x000}),
@@ -18,14 +18,14 @@ SettingVec Si5395Settings = {	Setting::mkSetting("DIE_REV", Access::RO, 3, 0, {0
 	Setting::mkSetting("LOL", Access::RO, 1, 1, {0x00e}),
 	Setting::mkSetting("HOLD", Access::RO, 5, 5, {0x00e}),
 	Setting::mkSetting("CAL_PLL", Access::RO, 5, 5, {0x00f}),
-	Setting::mkSetting("SYSINCAL_FLG", Access::RW, 0, 0, {0x011}),
-	Setting::mkSetting("LOSXAXB_FLG", Access::RW, 1, 1, {0x011}),
-	Setting::mkSetting("SMBUS_TIMEOUT_FLG", Access::RW, 5, 5, {0x011}),
-	Setting::mkSetting("LOS_FLG", Access::RW, 3, 0, {0x012}),
-	Setting::mkSetting("OOF_FLG", Access::RW, 7, 4, {0x012}),
-	Setting::mkSetting("LOL_FLG", Access::RW, 1, 1, {0x013}),
-	Setting::mkSetting("HOLD_FLG", Access::RW, 5, 5, {0x013}),
-	Setting::mkSetting("CAL_FLG_PLL", Access::RW, 5, 5, {0x014}),
+	Setting::mkSetting("SYSINCAL_FLG", Access::SelfSet, 0, 0, {0x011}),
+	Setting::mkSetting("LOSXAXB_FLG", Access::SelfSet, 1, 1, {0x011}),
+	Setting::mkSetting("SMBUS_TIMEOUT_FLG", Access::SelfSet, 5, 5, {0x011}),
+	Setting::mkSetting("LOS_FLG", Access::SelfSet, 3, 0, {0x012}),
+	Setting::mkSetting("OOF_FLG", Access::SelfSet, 7, 4, {0x012}),
+	Setting::mkSetting("LOL_FLG", Access::SelfSet, 1, 1, {0x013}),
+	Setting::mkSetting("HOLD_FLG", Access::SelfSet, 5, 5, {0x013}),
+	Setting::mkSetting("CAL_FLG_PLL", Access::SelfSet, 5, 5, {0x014}),
 	Setting::mkSetting("LOL_ON_HOLD", Access::RW, 1, 1, {0x016}),
 	Setting::mkSetting("SYSINCAL_INTR_MSK", Access::RW, 0, 0, {0x017}),
 	Setting::mkSetting("LOSXAXB_INTR_MSK", Access::RW, 1, 1, {0x017}),

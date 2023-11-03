@@ -19,7 +19,7 @@ namespace Si53xx {
 
 	class Setting;
 
-	enum class Access { RO, RW, SelfClear };
+	enum class Access { RO, RW, SelfClear, SelfSet };
 
 	Access toAccess(const std::string &s);
 
@@ -37,6 +37,7 @@ namespace Si53xx {
 		private:
 			RegAddr                  addr;
 			uint8_t                  selfRstMsk;
+			uint8_t                  selfSetMsk;
 			uint8_t                  value;
 			bool                     valid;
 			bool                     cacheable;
@@ -44,6 +45,7 @@ namespace Si53xx {
 
 		public:
 			uint8_t getSelfRstMsk() const { return selfRstMsk;                      }
+			uint8_t getSelfSetMsk() const { return selfSetMsk;                      }
 			int     getValue()      const { return valid && cacheable ? value : -1; }
 			RegAddr getAddr()       const { return addr;                            }
 

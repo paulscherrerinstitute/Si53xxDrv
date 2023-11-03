@@ -16,12 +16,17 @@ extern "C" {
 #include <string>
 #include <unordered_set>
 
-static const char *toAccess(int ro, int sc)
+static const char *toAccess(const char *name, int ro, int sc)
 {
 	if ( ro )
 		return "Access::RO";
 	if ( sc )
 		return "Access::SelfClear";
+	// a hack; self-setting (non-RO) bits are not specifically
+	// marked but they happen to be have _FLG in their name...
+	if ( strstr( name, "_FLG" ) ) {
+		return "Access::SelfSet";
+	}
 	return "Access::RW";
 }
 
@@ -69,7 +74,7 @@ size_t i,j;
 		s->insert( defList[i].name );
 		fprintf(f,"\tSetting::mkSetting(\"%s\", %s, %d, %d, {",
 			defList[i].name,
-			toAccess(defList[i].read_only, defList[i].self_clearing),
+			toAccess(defList[i].name, defList[i].read_only, defList[i].self_clearing),
 			defList[i].start_bit + defList[i].bit_length - 1,
 			defList[i].start_bit);
 		for ( j = 0; j < defList[i].reg_length; j++ ) {
@@ -87,7 +92,7 @@ const char *prefix = PREFIX;
 FILE       *f      = stdout;
 NameSet     allNames;
 
-	fprintf(f,"/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.c) -- DO NOT _MODIFY! */\n");
+	fprintf(f,"/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.cc) -- DO NOT _MODIFY! */\n");
 	fprintf(f,"#include <Si53xx.h>\n");
 	fprintf(f,"namespace Si53xx {\n");
 	fprintf(f,"SettingVec %sSettings = {", prefix);
