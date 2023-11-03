@@ -18,3 +18,7 @@ MODULE=Si53xxDrv
 EXCLUDE_VERSIONS=3.14 
 BUILDCLASSES=Linux
 ARCH_FILTER=yocto%
+
+$(patsubst %.h,%.cc,$(notdir $(wildcard ../Si5395-RevA*Registers.h))):%.cc:%.h
+	echo "#include <$(notdir $<)>" >> $@
+	cat  ../Si5395Design.cc.in     >> $@

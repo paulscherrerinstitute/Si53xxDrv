@@ -1,4 +1,4 @@
-SOURCES=Si53xx.cc Si5395Settings.cc Si5395.cc Si53xxI2c.cc TstDrv.cc
+SOURCES=Si53xx.cc Si5395Settings.cc Si5395.cc Si53xxI2c.cc TstDrv.cc $(patsubst %.h,%.cc,$(wildcard Si5395-RevA*Registers.h))
 
 ifneq ($(PSIMAKE),YES)
 
