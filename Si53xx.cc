@@ -929,15 +929,11 @@ static void chkAlt(unsigned idx, bool alt, const std::string pre)
 }
 
 void
-Si53xx::Si53xx::setOutputMux(unsigned idx, unsigned nDivider)
+Si53xx::Si53xx::setOutputMux(unsigned idx, unsigned nDivider, bool alt)
 {
-	// CBP shows out0a and out9a sharing the N divider with out0
-	// and out9, respectively. We'll enforce that even though there
-	// are separate registers...
-	set( *FMT( "OUT%u_MUX_SEL", idx ) , nDivider ); 
-	if ( 0 == idx || 9 == idx ) {
-		set( *FMT( "OUT%uA_MUX_SEL", idx ) , nDivider ); 
-	}
+	chkAlt( idx, alt, "Si53xx::setOutputMux");
+
+	set( *FMT( "OUT%u%s_MUX_SEL", idx, (alt ? "A" : "") ) , nDivider );
 }
 
 unsigned
@@ -947,6 +943,18 @@ Si53xx::Si53xx::getOutputMux(unsigned idx, bool alt)
 
 	// should only be needed for diagnostics; the 'A' outputs must be retrieved manually
 	return get( *FMT( "OUT%u%s_MUX_SEL", idx, (alt ? "A" : "") ) );
+}
+
+bool
+Si53xx::Si53xx::getOutallDisable()
+{
+	return ! get( "OUTALL_DISABLE_LOW" );
+}
+
+void
+Si53xx::Si53xx::setOutallDisable(bool disable)
+{
+	set( "OUTALL_DISABLE_LOW", ! disable );
 }
 
 bool

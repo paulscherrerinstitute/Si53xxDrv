@@ -82,11 +82,16 @@ IOCSH_FUNC_WRAP_REGISTRAR( Si5395Registrar,
   SI5395_WRAP_OVLD( getStatusOOF, (void) );
   SI5395_WRAP(      getStatusLOL );
   SI5395_WRAP(      getStatusHOLD );
+  SI5395_WRAP_OVLD(      getNDivider, (unsigned), "idx");
+  SI5395_WRAP_OVLD(      setNDivider, (unsigned, Si53xx::Si53xx::ValType, Si53xx::Si53xx::ValType), "idx", "numerator", "denominator");
   SI5395_WRAP(      getRDivider, "idx", "alt (set nonzero for 0A, 9A)" );
   SI5395_WRAP(      setRDivider, "idx", "val (even >=2 )", "alt (set nonzero for 0A, 9A)" );
   SI5395_WRAP(      setOutput,   "idx", "outputConfig (3 for lvds33)", "rDivider (even >=2)", "alt (set nonzero for OUT0A, OUT9A)");
   SI5395_WRAP(      getOutputEnable, "idx", "alt (set nonzero for OUT0A, OUT9A)");
   SI5395_WRAP(      setOutputEnable, "idx", "enableVal", "alt (set nonzero for OUT0A, OUT9A)");
+  SI5395_WRAP(      setOutputEnable, "idx", "enableVal", "alt (set nonzero for OUT0A, OUT9A)");
+  SI5395_WRAP(      getOutputMux, "idx", "alt (set nonzero for 0A, 9A)");
+  SI5395_WRAP(      setOutputMux, "idx", "N-Divider", "alt (set nonzero for 0A, 9A)");
   SI5395_WRAP(      syncRDividers );
   SI5395_WRAP_OVLD( get,        (const std::string&), "key" );
   SI5395_WRAP_OVLD( set,        (const std::string&, Si53xx::Si53xx::ValType), "key", "value" );

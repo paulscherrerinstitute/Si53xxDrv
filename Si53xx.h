@@ -326,11 +326,17 @@ namespace Si53xx {
 			virtual void     sendPreamble();
 			virtual void     sendPostamble();
 
-			virtual void     setOutputMux(unsigned idx, unsigned nDivider);
+			virtual void     setOutputMux(unsigned idx, unsigned nDivider, bool alt = false);
 			virtual unsigned getOutputMux(unsigned idx, bool alt = false);
 
 			// rdiv is ignored (not programmed) when switching the output OFF!
 			virtual void     setOutput(unsigned idx, OutputConfig drvCfg, unsigned rdiv = 2, bool alt = false);
+
+                        // disable all outputs:
+			//  true  -> disable all output
+			//  false -> individual outputs controlled by 'their' OE bit
+                        virtual bool     getOutallDisable();
+                        virtual void     setOutallDisable(bool);
 
 			virtual bool     getOutputEnable(unsigned idx, bool alt = false);
 			virtual void     setOutputEnable(unsigned idx, bool enable, bool alt = false);
@@ -386,6 +392,9 @@ namespace Si53xx {
 
 			virtual void     selInput(unsigned inp);
 
+			virtual ValType  getVcoMinFreq() const { return vcoMinFreq; }
+			virtual ValType  getVcoMaxFreq() const { return vcoMaxFreq; }
+
 			// Parameters describing a divider; if 'den' is zero a floating-
 			// point may be used.
 			struct DivParm {
@@ -438,12 +447,12 @@ namespace Si53xx {
 
 				virtual ValType getVcoMinFreq() const
 				{
-					return obj->vcoMinFreq;
+					return obj->getVcoMinFreq();
 				}
 
 				virtual ValType getVcoMaxFreq() const
 				{
-					return obj->vcoMaxFreq;
+					return obj->getVcoMaxFreq();
 				}
 			};
 
@@ -474,7 +483,6 @@ namespace Si53xx {
 			virtual void     reset(bool hard = true);
 
 			virtual void     syncRDividers();
-
 	};
 
 	// RAII object for preamble management

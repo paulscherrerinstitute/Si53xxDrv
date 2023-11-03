@@ -58,6 +58,8 @@ cdef extern from "Si5395.h" namespace "Si53xx":
       void     setOutputMux(unsigned, unsigned) except+
       unsigned getOutputMux(unsigned, bool) except+
       void     setOutput(unsigned, MOutputConfig, unsigned, bool) except+
+      bool     getOutallDisable() except+
+      void     setOutallDisable(bool) except+
       bool     getOutputEnable(unsigned, bool) except+
       void     setOutputEnable(unsigned, bool, bool) except+
 
@@ -161,6 +163,12 @@ cdef class SI5395:
 
     def setOutput(self, idx, OutputConfig cfg, rdiv, alt = False):
       self.c_cls.setOutput( idx, <MOutputConfig>cfg, rdiv, alt )
+
+    def getOutallDisable(self):
+      return self.c_cls.getOutallDisable()
+
+    def setOutallDisable(self, val):
+      return self.c_cls.setOutallDisable( val )
 
     def getOutputEnable(self, idx, alt = False):
       return self.c_cls.getOutputEnable( idx, alt )
