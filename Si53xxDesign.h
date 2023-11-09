@@ -9,9 +9,9 @@ namespace Si53xx {
 template <typename T, int ID_SIZE = 8>
 class Si53xxDesignVault {
 private:
-	std::map<const std::string, InitValProvider *> _map;
-    Si53xxDesignVault(const Si53xxDesignVault &)       = delete;
-    Si53xxDesignVault & operator=(Si53xxDesignVault &) = delete;
+	std::map<const std::string, InitValProvider *>       _map;
+	Si53xxDesignVault(const Si53xxDesignVault &)       = delete;
+	Si53xxDesignVault & operator=(Si53xxDesignVault &) = delete;
 public:
 	Si53xxDesignVault()
 	{
