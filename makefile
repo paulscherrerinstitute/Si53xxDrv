@@ -43,7 +43,7 @@ TstDrv.o: TstDrv.cc Si53xx.h TstDrv.h
 
 TstDrv.h: Si5395.h
 
-Si5395.o: Si5395.h Si5395-RevA-cio_timing_base-CIO0100-Registers.h Si53xxDesign.h
+Si5395.o: Si5395.h Si5395-RevA-cio_timing_base-CIO0100-Registers.h Si5395Design.h
 
 Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extract)
 	$(RM) $@
@@ -54,9 +54,15 @@ Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extr
 $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
 	cat $^ | $(CXX) -o $@ -xc++ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -Wno-write-strings -
 
-
 .PHONY: clean
 
 clean:
 	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract $(addsuffix .o,$(notdir $(PROGS)))) $(DESIGN_H:%.h=%.cc)
+	$(RM) makefile.dep
+
+makefile.dep: $(SOURCES) $(addsuffix .cc,$(notdir $(PROGS))) reg_extract.cc
+	$(RM) $@
+	$(CXX) $(pysi5395_CXXFLAGS) -MM $^ > $@
+
+-include makefile.dep
 endif
