@@ -37,7 +37,10 @@ static int Si5395RegisterClock(const char *name, const char *i2cBus, unsigned i2
             throw std::runtime_error("Error: missing i2c bus name");
         }
         Si5395 *o = new Si5395( i2cBus, i2cAddr );
-		o->init(false, designId);
+        if ( 0 == designId ) {
+            designId = "";
+        }
+        o->init(false, designId);
         objMap[ name ] = o ;
     } catch ( std::exception &e ) {
         errlogPrintf("Error: registration failed due to exception: %s\n", e.what());
