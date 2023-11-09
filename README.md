@@ -150,6 +150,20 @@ a configuration event if it is found to have prevously been loaded
 already. If the new "designId" differs from the currently loaded design Id
 then the reinitialization is always forced.
 
+### Currently Available Base Configurations
+
+There are currently two base configurations with different bandwidths;
+both use a phase-detector frequency close to 1.9MHz.
+
+ - Design `CIO0100` is a narrow-band design (loop bandwidth 82Hz).
+ - Design `CIO0200` has a loop bandwidth of 680Hz.
+
+The `CIO0200` configuration has been verified to maintain lock when
+using a 500MHz reference which is FM-modulated to a max. deviation of
++/-10kHz with a trangular wave of a frequency of 0.007Hz.
+This meets the SLS2 LLRF-500M-REQ specification (2023/01/27, Table 6:
+CW ~500MHz, modulation less than 240Hz/s, tuning-range +/-10kHz).
+
 ## EPICS IOCSH Support
 
 When built with the PSI EPICS build system then iocsh support is built
