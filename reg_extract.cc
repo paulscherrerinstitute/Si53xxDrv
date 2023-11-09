@@ -95,7 +95,8 @@ NameSet     allNames;
 	fprintf(f,"/* THIS FILE WAS AUTOMATICALLY GENERATED (reg_extract.cc) -- DO NOT _MODIFY! */\n");
 	fprintf(f,"#include <Si53xx.h>\n");
 	fprintf(f,"namespace Si53xx {\n");
-	fprintf(f,"SettingVec %sSettings = {", prefix);
+	fprintf(f,"SettingVec *get%sSettings() {\n", prefix);
+	fprintf(f,"\tstatic SettingVec s = {\n");
 
 	writeDefinitions( SI_TO_WRAP, f, &allNames );
 
@@ -105,7 +106,9 @@ NameSet     allNames;
 
 	writeDefinitions( missing, f, &allNames );
 
-	fprintf(f,"\n};\n");
+	fprintf(f,"\t};\n");
+	fprintf(f,"\treturn &s;\n");
+	fprintf(f,"}\n");
 	fprintf(f,"\n}");
 	return 0;
 }

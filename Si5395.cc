@@ -1,11 +1,12 @@
 
 #include "Si5395.h"
+#include "Si5395Design.h"
 
 #include "Si53xxI2c.h"
 #include "TstDrv.h"
 
 namespace Si53xx {
-	extern SettingVec Si5395Settings;
+	extern SettingVec *getSi5395Settings();
 };
 
 using namespace Si53xx;
@@ -16,7 +17,7 @@ static const Si53xxParams params = {
 };
 
 Si5395::Si5395(I2cDriverShp drv)
-: Si53xx(drv, Si5395Settings, ::params)
+: Si53xx(drv, getSi5395Settings(), ::params)
 {
 }
 
@@ -34,7 +35,7 @@ void
 Si5395::loadDefaults(bool force, const std::string &designId)
 {
 
-	InitValProvider * prov    = si5395DesignVault.getDesign( designId );
+	InitValProvider * prov    = getSi5395DesignVault()->getDesign( designId );
 	if ( ! prov ) {
 		throw std::runtime_error("Si5395::loadDefaults: no design with requested ID found");
 	}
@@ -74,4 +75,8 @@ Si5395::getDesignId()
 	return std::string( id );
 }
 
-Si53xxDesignVault<Si5395> Si53xx::si5395DesignVault;
+Si53xxDesignVault<Si5395> *Si53xx::getSi5395DesignVault()\
+{
+static Si53xxDesignVault<Si5395> v;
+	return &v;
+}

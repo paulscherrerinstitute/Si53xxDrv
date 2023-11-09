@@ -166,7 +166,7 @@ Si53xx::toAccess(const std::string &s)
 	throw std::invalid_argument("Si53xx::toAccess: unable to convert string to 'Access' type");
 }
 
-Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &p)
+Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec *settings, const Si53xxParams &p)
 : params           ( p           ),
   drv              ( drv         ),
   pageNo           ( -1          ),
@@ -185,7 +185,7 @@ Si53xx::Si53xx::Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53x
 	}
 
 	// register settings
-	for (auto it = settings.begin(); it != settings.end(); ++it) {
+	for (auto it = settings->begin(); it != settings->end(); ++it) {
 		SettingShp s = *it;
 		// map the register
 		auto rv = this->settings.insert( { s->getName().c_str(), s } );

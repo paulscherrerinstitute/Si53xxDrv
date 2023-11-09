@@ -195,7 +195,7 @@ namespace Si53xx {
 
 	class Si53xx {
 		public:
-			Si53xx(I2cDriverShp drv, const SettingVec &settings, const Si53xxParams &params);
+			Si53xx(I2cDriverShp drv, const SettingVec *settings, const Si53xxParams &params);
 			virtual ~Si53xx() {};
 
 			// to be called after object is constructed

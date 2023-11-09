@@ -2,7 +2,6 @@
 #define SI5395_DRIVER_H
 
 #include <Si53xx.h>
-#include <Si53xxDesign.h>
 #include <string>
 
 namespace Si53xx {
@@ -17,8 +16,6 @@ namespace Si53xx {
 			virtual bool        getZDMRAlt() const { return true; }
 			virtual std::string getDesignId();
 	};
-
-	extern Si53xxDesignVault<Si5395> si5395DesignVault;
 };
 
 #endif
