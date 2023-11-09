@@ -9,7 +9,7 @@ CXXFLAGS=-g -fpic -std=c++11 -Wall
 DESIGN_H=$(wildcard Si5395-RevA-*Registers.h)
 
 OBJS=$(SOURCES:%.cc=%.o) $(DESIGN_H:%.h=%.o)
-PROGS=$(addprefix $(ODIR), Tst CsvDiff)
+PROGS=$(addprefix $(ODIR),Tst CsvDiff)
 TGTS=$(addprefix $(ODIR),pysi5395.so) $(PROGS)
 
 all: $(TGTS)
@@ -58,5 +58,5 @@ $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
 .PHONY: clean
 
 clean:
-	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract) $(DESIGN_H:%.h=%.cc)
+	$(RM) $(addprefix $(ODIR),$(OBJS) $(TGTS) pysi5395.cc si5395_reg_extract $(addsuffix .o,$(notdir $(PROGS)))) $(DESIGN_H:%.h=%.cc)
 endif
