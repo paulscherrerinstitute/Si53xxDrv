@@ -3,14 +3,16 @@ SOURCES=Si53xx.cc Si5395Settings.cc Si5395.cc Si53xxI2c.cc TstDrv.cc $(patsubst 
 ifneq ($(PSIMAKE),YES)
 
 SOURCES+=pysi5395.cc
+SOURCES+=cio_evm_init_clk.cc
 
 CXXFLAGS=-g -fpic -std=c++11 -Wall
 
 DESIGN_H=$(wildcard Si5395-RevA-*Registers.h)
 
 OBJS=$(SOURCES:%.cc=%.o) $(DESIGN_H:%.h=%.o)
-PROGS=$(addprefix $(ODIR),Tst CsvDiff)
-TGTS=$(addprefix $(ODIR),pysi5395.so) $(PROGS)
+PROGS=$(addprefix $(ODIR),Tst CsvDiff cio_evm_init_clk)
+TGTS=$(PROGS)
+TGTS+=$(addprefix $(ODIR),pysi5395.so)
 
 all: $(TGTS)
 
@@ -39,6 +41,8 @@ $(ODIR)%.o: %.cc Si53xx.h
 	echo $@
 	$(CXX) $(CXXFLAGS) $($(patsubst %.o,%,$@)_CXXFLAGS) -c -o $@ -I. $<
 
+$(ODIR)
+
 TstDrv.o: TstDrv.cc Si53xx.h TstDrv.h
 
 TstDrv.h: Si5395.h
@@ -52,7 +56,7 @@ Si5395Settings.cc: $(and $(wildcard Si5395-RevA-Regmap.h),$(ODIR)si5395_reg_extr
 # disable warning about assigning string constants to a char*;
 # the regmap header is legay C (= ill-written).
 $(ODIR)si5395_reg_extract: Si5395-RevA-Regmap.h reg_extract.cc
-	cat $^ | $(CXX) -o $@ -xc++ -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -Wno-write-strings -
+	cat $^ | $(CXX) -o $@ -xc++ -std=c++11 -DPREFIX='"Si5395"' -DSI_TO_WRAP=si5395_reva_settings -Wno-write-strings -
 
 .PHONY: clean
 
